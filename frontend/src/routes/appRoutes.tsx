@@ -1,0 +1,65 @@
+import { lazy } from 'react';
+import {
+  User,
+  Briefcase,
+  FolderKanban,
+  FileText,
+  MessageSquare,
+  Calendar,
+  Sparkles,
+  Bell,
+  Settings,
+  LayoutDashboard,
+  BarChart3,
+  Users,
+  Share2,
+  Building2,
+  BookOpen,
+  GraduationCap,
+  CreditCard,
+} from 'lucide-react';
+
+const DashboardPage = lazy(() => import('@/pages/app/DashboardPage'));
+const MasterProfilePage = lazy(() => import('@/pages/app/MasterProfilePage'));
+const JobDiscoveryPage = lazy(() => import('@/pages/app/JobDiscoveryPage'));
+const JobPipelinePage = lazy(() => import('@/pages/app/JobPipelinePage'));
+const ResumeAIPage = lazy(() => import('@/pages/app/ResumeAIPage'));
+const CoverLetterAIPage = lazy(() => import('@/pages/app/CoverLetterAIPage'));
+const InterviewPrepPage = lazy(() => import('@/pages/app/InterviewPrepPage'));
+const CareerTwinPage = lazy(() => import('@/pages/app/CareerTwinPage'));
+const NotificationsCenterPage = lazy(() => import('@/pages/app/NotificationsPage'));
+const SettingsPage = lazy(() => import('@/pages/app/SettingsPage'));
+const AnalyticsPage = lazy(() => import('@/pages/app/AnalyticsPage'));
+const RecruitersPage = lazy(() => import('@/pages/app/RecruitersPage'));
+const ReferralsPage = lazy(() => import('@/pages/app/ReferralsPage'));
+const CompaniesPage = lazy(() => import('@/pages/app/CompaniesPage'));
+const LearningPathPage = lazy(() => import('@/pages/app/LearningPathPage'));
+const SkillGapPage = lazy(() => import('@/pages/app/SkillGapPage'));
+const AppBillingPage = lazy(() => import('@/pages/app/AppBillingPage'));
+
+export interface AppRoute {
+  path: string;
+  element: React.ReactNode;
+  title: string;
+  icon: React.ElementType;
+}
+
+export const appRoutes: AppRoute[] = [
+  { path: 'dashboard', element: <DashboardPage />, title: 'Dashboard', icon: LayoutDashboard },
+  { path: 'master-profile', element: <MasterProfilePage />, title: 'Master Profile', icon: User },
+  { path: 'job-discovery', element: <JobDiscoveryPage />, title: 'Job Discovery', icon: Briefcase },
+  { path: 'job-pipeline', element: <JobPipelinePage />, title: 'Job Pipeline', icon: FolderKanban },
+  { path: 'resume-ai', element: <ResumeAIPage />, title: 'Resume AI', icon: FileText },
+  { path: 'cover-letter-ai', element: <CoverLetterAIPage />, title: 'Cover Letter AI', icon: MessageSquare },
+  { path: 'interview-preparation', element: <InterviewPrepPage />, title: 'Interview Preparation', icon: Calendar },
+  { path: 'career-twin', element: <CareerTwinPage />, title: 'Career Twin', icon: Sparkles },
+  { path: 'notifications', element: <NotificationsCenterPage />, title: 'Notifications Center', icon: Bell },
+  { path: 'analytics', element: <AnalyticsPage />, title: 'Analytics', icon: BarChart3 },
+  { path: 'recruiters', element: <RecruitersPage />, title: 'Recruiters', icon: Users },
+  { path: 'referrals', element: <ReferralsPage />, title: 'Referrals', icon: Share2 },
+  { path: 'companies', element: <CompaniesPage />, title: 'Companies', icon: Building2 },
+  { path: 'learning-path', element: <LearningPathPage />, title: 'Learning Path', icon: BookOpen },
+  { path: 'skill-gap', element: <SkillGapPage />, title: 'Skill Gap Analysis', icon: GraduationCap },
+  { path: 'billing', element: <AppBillingPage />, title: 'Billing', icon: CreditCard },
+  { path: 'settings', element: <SettingsPage />, title: 'Settings', icon: Settings },
+];
