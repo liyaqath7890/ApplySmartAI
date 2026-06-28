@@ -113,6 +113,11 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
     }
   },
 
+  savedCompanies: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+
   atsScore: {
     type: DataTypes.INTEGER,
     defaultValue: 0

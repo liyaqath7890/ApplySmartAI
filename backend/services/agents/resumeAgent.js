@@ -54,39 +54,32 @@ class ResumeAgent {
       
       ${existingResume?.parsedContent ? `Existing Resume Data: ${JSON.stringify(existingResume.parsedContent)}` : ''}
       
-      Return the resume in JSON format with the following structure:
+      Return the resume strictly in JSON format with the following structure:
       {
-        personal: { name, email, phone, location },
-        summary: string,
-        skills: [string],
-        experience: [{ title, company, duration, description }],
-        education: [{ degree, school, year }],
-        certifications: [{ name, issuer, year }]
+        "personal": { "name": "", "email": "", "phone": "", "location": "" },
+        "summary": "",
+        "skills": [""],
+        "experience": [{ "title": "", "company": "", "duration": "", "description": "" }],
+        "education": [{ "degree": "", "school": "", "year": "" }],
+        "certifications": [{ "name": "", "issuer": "", "year": "" }]
       }
     `;
 
     const response = await openai.chat.completions.create({
       model: config.openai.model || 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
     });
 
     const content = response.choices[0].message.content;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : content;
+    return JSON.parse(content);
   }
 
   async calculateATSScore(resumeContent, job) {
-    const jobText = `${job.title} ${job.description} ${job.requirements?.join(' ')}`;
-    const resumeText = JSON.stringify(resumeContent);
-    
-    const jobWords = jobText.toLowerCase().match(/\b\w+\b/g) || [];
-    const resumeWords = resumeText.toLowerCase().match(/\b\w+\b/g) || [];
-    
-    const matches = jobWords.filter(word => resumeWords.includes(word));
-    const score = Math.round((matches.length / jobWords.length) * 100);
-    
-    return Math.min(100, Math.max(0, score));
+    const ATSScoringService = (await import('../ATSScoringService.js')).default;
+    const result = await ATSScoringService.calculateATSScore({ content: JSON.stringify(resumeContent) }, job);
+    return result.overallScore || 0;
   }
 }
 

@@ -19,6 +19,13 @@ class AgentOrchestrator {
     this.agents[agentName] = agentInstance;
   }
 
+  getAgent(agentName) {
+    if (!this.agents[agentName]) {
+      throw new Error(`Agent "${agentName}" is not registered.`);
+    }
+    return this.agents[agentName];
+  }
+
   async executeTask(agentId, taskType, inputData = {}) {
     const agent = await AutonomousAgent.findByPk(agentId, {
       include: [{ model: User, as: 'candidate' }]

@@ -6,7 +6,8 @@ import {
   createApplicationPackage,
   reviewApplicationPackage,
   submitApplicationPackage,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getApplicationReadiness
 } from '../controllers/applicationOrchestratorController.js';
 
 const router = express.Router();
@@ -20,7 +21,11 @@ router.post('/queue', createApplicationPackage);
 router.put('/queue/:id/review', reviewApplicationPackage);
 router.post('/queue/:id/submit', submitApplicationPackage);
 
+// AI Readiness check
+router.get('/readiness', getApplicationReadiness);
+
 // Legacy/Status route
 router.put('/:id/status', updateApplicationStatus);
 
 export default router;
+

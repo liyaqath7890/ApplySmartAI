@@ -124,3 +124,77 @@ export const updateApplicationStatus = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// @desc    Get Application Readiness Score + Checklist for a job
+import { User, Resume, CoverLetter, CandidateProfile, Skill } from '../routes/models/index.js';
+import OpenAI from 'openai';
+import config from '../config/index.js';
+
+const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+export const getApplicationReadiness = async (req, res) => {
+  try {
+    const { jobId, externalJobId } = req.query;
+    const candidateId = req.user.id;
+
+    const [user, primaryResume, coverLetters] = await Promise.all([
+      User.findByPk(candidateId, { include: ['candidateProfile', 'skills', 'workExperience', 'education'] }),
+      Resume.findOne({ where: { candidateId, isPrimary: true } }),
+      CoverLetter.findAll({ where: { candidateId }, limit: 1, order: [['createdAt', 'DESC']] })
+    ]);
+
+    let job = null;
+    if (jobId) job = await Job.findByPk(jobId);
+    else if (externalJobId) job = await ExternalJob.findByPk(externalJobId);
+
+    const systemPrompt = `You are an expert application coach assessing how ready a candidate is to apply for a job.
+    Score their readiness from 0-100 and provide a detailed checklist.
+    Return JSON:
+    {
+      "readinessScore": 0-100,
+      "grade": "A|B|C|D|F",
+      "summary": "string",
+      "checklist": [
+        {
+          "category": "string",
+          "item": "string",
+          "status": "complete|incomplete|needs_improvement",
+          "action": "string",
+          "priority": "high|medium|low"
+        }
+      ],
+      "topPriorities": ["string"],
+      "strengths": ["string"]
+    }`;
+
+    const userPrompt = `Candidate Profile:
+Name: ${user.firstName} ${user.lastName}
+Headline: ${user.candidateProfile?.headline || 'None'}
+Skills: ${user.skills?.map(s => s.name).join(', ') || 'None listed'}
+Work Experience Entries: ${user.workExperience?.length || 0}
+Education Entries: ${user.education?.length || 0}
+Has Primary Resume: ${primaryResume ? 'Yes' : 'No'}
+Resume ATS Score: ${primaryResume?.atsScore || 0}
+Has Cover Letter: ${coverLetters.length > 0 ? 'Yes' : 'No'}
+${job ? `\nTarget Job:\nTitle: ${job.title}\nCompany: ${job.company}\nRequired Skills: ${job.requirements?.join(', ') || 'Not specified'}` : ''}
+
+Assess readiness and provide specific, actionable checklist items.`;
+
+    const response = await openai.chat.completions.create({
+      model: config.openai.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.3,
+      response_format: { type: 'json_object' }
+    });
+
+    const readiness = JSON.parse(response.choices[0].message.content);
+    res.json({ success: true, ...readiness });
+  } catch (error) {
+    console.error('Get application readiness error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+

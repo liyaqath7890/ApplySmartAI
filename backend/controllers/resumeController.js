@@ -43,51 +43,6 @@ const upload = multer({
   }
 });
 
-// Calculate ATS score
-const calculateATSScore = (content) => {
-  let score = 0;
-  const suggestions = [];
-
-  // Check for keywords
-  const keywords = ['experience', 'skills', 'education', 'projects', 'achievements', 'summary', 'contact'];
-  let keywordCount = 0;
-  keywords.forEach(keyword => {
-    if (content.toLowerCase().includes(keyword)) {
-      keywordCount++;
-    }
-  });
-  score += (keywordCount / keywords.length) * 30;
-
-  // Check for bullet points
-  const bulletPoints = content.match(/[•●-]/g);
-  if (bulletPoints && bulletPoints.length > 5) {
-    score += 20;
-  } else {
-    suggestions.push('Use more bullet points to highlight achievements');
-  }
-
-  // Check for action verbs
-  const actionVerbs = ['achieved', 'built', 'created', 'developed', 'led', 'managed', 'improved', 'increased', 'decreased'];
-  let verbCount = 0;
-  actionVerbs.forEach(verb => {
-    if (content.toLowerCase().includes(verb)) {
-      verbCount++;
-    }
-  });
-  score += (verbCount / actionVerbs.length) * 30;
-
-  // Check length
-  const wordCount = content.split(/\s+/).length;
-  if (wordCount >= 300 && wordCount <= 800) {
-    score += 20;
-  } else if (wordCount < 300) {
-    suggestions.push('Resume is too short - aim for 300-800 words');
-  } else {
-    suggestions.push('Resume is too long - aim for 300-800 words');
-  }
-
-  return { score: Math.round(score), suggestions };
-};
 
 // Get all resumes for a candidate
 export const getResumes = async (req, res) => {

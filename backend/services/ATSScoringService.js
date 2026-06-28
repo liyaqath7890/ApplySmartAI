@@ -14,32 +14,53 @@ class ATSScoringService {
       const resumeText = this.extractResumeText(resume);
       const jobText = this.extractJobText(job);
       
-      // Keyword matching
-      const keywordScore = this.calculateKeywordMatch(resumeText, jobText);
+      const systemPrompt = `You are an expert Applicant Tracking System (ATS) and Technical Recruiter.
+      Evaluate the provided resume text against the provided job description.
+      You must strictly return JSON matching this schema:
+      {
+        "overallScore": 85,
+        "keywordScore": 80,
+        "formatScore": 90,
+        "sectionScore": 85,
+        "details": {
+          "matchedKeywords": ["react", "node"],
+          "missingKeywords": ["aws", "docker"],
+          "formatIssues": ["Missing bullet points in recent experience"],
+          "missingSections": ["Certifications"]
+        }
+      }`;
+
+      const userPrompt = `
+      Job Description:
+      ${jobText}
+
+      Resume Content:
+      ${resumeText}
       
-      // Format compliance
-      const formatScore = this.calculateFormatCompliance(resume);
-      
-      // Section completeness
-      const sectionScore = this.calculateSectionCompleteness(resume);
-      
-      // Overall ATS score (weighted average)
-      const overallScore = Math.round(
-        (keywordScore * 0.5) + 
-        (formatScore * 0.2) + 
-        (sectionScore * 0.3)
-      );
+      Provide the ATS evaluation JSON.`;
+
+      const response = await openai.chat.completions.create({
+        model: config.openai.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      });
+
+      const parsedResponse = JSON.parse(response.choices[0].message.content);
       
       return {
-        overallScore,
-        keywordScore,
-        formatScore,
-        sectionScore,
-        details: {
-          matchedKeywords: this.getMatchedKeywords(resumeText, jobText),
-          missingKeywords: this.getMissingKeywords(resumeText, jobText),
-          formatIssues: this.getFormatIssues(resume),
-          missingSections: this.getMissingSections(resume)
+        overallScore: parsedResponse.overallScore || 50,
+        keywordScore: parsedResponse.keywordScore || 50,
+        formatScore: parsedResponse.formatScore || 50,
+        sectionScore: parsedResponse.sectionScore || 50,
+        details: parsedResponse.details || {
+          matchedKeywords: [],
+          missingKeywords: [],
+          formatIssues: [],
+          missingSections: []
         }
       };
     } catch (error) {
@@ -74,156 +95,6 @@ class ATSScoringService {
       job.company || ''
     ];
     return parts.join(' ').toLowerCase();
-  }
-
-  /**
-   * Calculate keyword match score
-   */
-  calculateKeywordMatch(resumeText, jobText) {
-    const jobKeywords = this.extractKeywords(jobText);
-    const resumeKeywords = this.extractKeywords(resumeText.toLowerCase());
-    
-    const matched = jobKeywords.filter(keyword => 
-      resumeKeywords.some(rk => rk.includes(keyword) || keyword.includes(rk))
-    );
-    
-    return jobKeywords.length > 0 
-      ? Math.round((matched.length / jobKeywords.length) * 100)
-      : 0;
-  }
-
-  /**
-   * Extract keywords from text
-   */
-  extractKeywords(text) {
-    const words = text.match(/\b[a-z]{3,}\b/g) || [];
-    const stopWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'has', 'have', 'been', 'will', 'with', 'this', 'that', 'from', 'they', 'would', 'there', 'their', 'what', 'about', 'which', 'when', 'make', 'like', 'into', 'year', 'your', 'just', 'over', 'also', 'such', 'because', 'these', 'first', 'being', 'through', 'most', 'must']);
-    
-    return [...new Set(words.filter(word => !stopWords.has(word)))];
-  }
-
-  /**
-   * Calculate format compliance score
-   */
-  calculateFormatCompliance(resume) {
-    let score = 100;
-    const issues = [];
-    
-    if (!resume.content) {
-      score -= 30;
-      issues.push('Missing resume content');
-    }
-    
-    if (resume.fileSize && resume.fileSize > 2000000) {
-      score -= 20;
-      issues.push('File size too large (>2MB)');
-    }
-    
-    if (resume.fileType && !['pdf', 'docx', 'txt'].includes(resume.fileType.toLowerCase())) {
-      score -= 20;
-      issues.push('Unsupported file format');
-    }
-    
-    return Math.max(0, score);
-  }
-
-  /**
-   * Calculate section completeness score
-   */
-  calculateSectionCompleteness(resume) {
-    let score = 0;
-    const requiredSections = ['contact', 'experience', 'education', 'skills'];
-    
-    const resumeText = this.extractResumeText(resume).toLowerCase();
-    
-    if (resumeText.includes('@') || resumeText.includes('email') || resumeText.includes('phone')) {
-      score += 25;
-    }
-    
-    if (resumeText.includes('experience') || resumeText.includes('work')) {
-      score += 25;
-    }
-    
-    if (resumeText.includes('education') || resumeText.includes('degree') || resumeText.includes('university')) {
-      score += 25;
-    }
-    
-    if (resumeText.includes('skills') || resumeText.includes('technologies') || resumeText.includes('proficient')) {
-      score += 25;
-    }
-    
-    return score;
-  }
-
-  /**
-   * Get matched keywords
-   */
-  getMatchedKeywords(resumeText, jobText) {
-    const jobKeywords = this.extractKeywords(jobText);
-    const resumeKeywords = this.extractKeywords(resumeText.toLowerCase());
-    
-    return jobKeywords.filter(keyword => 
-      resumeKeywords.some(rk => rk.includes(keyword) || keyword.includes(rk))
-    );
-  }
-
-  /**
-   * Get missing keywords
-   */
-  getMissingKeywords(resumeText, jobText) {
-    const jobKeywords = this.extractKeywords(jobText);
-    const resumeKeywords = this.extractKeywords(resumeText.toLowerCase());
-    
-    return jobKeywords.filter(keyword => 
-      !resumeKeywords.some(rk => rk.includes(keyword) || keyword.includes(rk))
-    );
-  }
-
-  /**
-   * Get format issues
-   */
-  getFormatIssues(resume) {
-    const issues = [];
-    
-    if (!resume.content) {
-      issues.push('Missing resume content');
-    }
-    
-    if (resume.fileSize && resume.fileSize > 2000000) {
-      issues.push('File size too large (>2MB)');
-    }
-    
-    if (resume.fileType && !['pdf', 'docx', 'txt'].includes(resume.fileType.toLowerCase())) {
-      issues.push('Unsupported file format');
-    }
-    
-    return issues;
-  }
-
-  /**
-   * Get missing sections
-   */
-  getMissingSections(resume) {
-    const missing = [];
-    const resumeText = this.extractResumeText(resume).toLowerCase();
-    
-    if (!resumeText.includes('@') && !resumeText.includes('email') && !resumeText.includes('phone')) {
-      missing.push('Contact Information');
-    }
-    
-    if (!resumeText.includes('experience') && !resumeText.includes('work')) {
-      missing.push('Work Experience');
-    }
-    
-    if (!resumeText.includes('education') && !resumeText.includes('degree') && !resumeText.includes('university')) {
-      missing.push('Education');
-    }
-    
-    if (!resumeText.includes('skills') && !resumeText.includes('technologies') && !resumeText.includes('proficient')) {
-      missing.push('Skills');
-    }
-    
-    return missing;
   }
 
   /**

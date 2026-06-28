@@ -57,12 +57,15 @@ export const updateCareerTwin = async (req, res) => {
 
 export const analyzeWeaknesses = async (req, res) => {
   try {
-    const mockAnalysis = {
-      skills: ['cloud infrastructure', 'kubernetes'],
-      experience: ['team leadership'],
-      recommendations: ['Take a AWS Certified Solutions Architect course']
-    };
-    res.json({ success: true, analysis: mockAnalysis });
+    const candidateId = req.user.id;
+    const careerTwinAgent = orchestrator.getAgent('careerTwinAgent');
+    const candidate = await User.findByPk(candidateId, {
+      include: ['candidateProfile', 'skills', 'workExperience', 'education']
+    });
+    if (!candidate) return res.status(404).json({ success: false, error: 'Candidate not found' });
+    
+    const result = await careerTwinAgent.generateCareerTwin(candidate);
+    res.json({ success: true, analysis: result.weaknessAnalysis, skillGapAnalysis: result.skillGapAnalysis });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -70,12 +73,15 @@ export const analyzeWeaknesses = async (req, res) => {
 
 export const getGrowthRecommendations = async (req, res) => {
   try {
-    const recommendations = [
-      'Focus on building cloud-native applications',
-      'Contribute to open source projects',
-      'Practice system design interviews'
-    ];
-    res.json({ success: true, recommendations });
+    const candidateId = req.user.id;
+    const careerTwinAgent = orchestrator.getAgent('careerTwinAgent');
+    const candidate = await User.findByPk(candidateId, {
+      include: ['candidateProfile', 'skills', 'workExperience', 'education']
+    });
+    if (!candidate) return res.status(404).json({ success: false, error: 'Candidate not found' });
+    
+    const result = await careerTwinAgent.generateCareerTwin(candidate);
+    res.json({ success: true, recommendations: result.growthRecommendations, marketPositioning: result.marketPositioning });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -149,10 +155,33 @@ export const createRecruiterInteraction = async (req, res) => {
 
 export const generateOutreachMessage = async (req, res) => {
   try {
-    const message = {
-      subject: 'Interest in Senior Full Stack Developer Role',
-      content: 'Hi! I saw you\'re hiring for a Senior Full Stack Developer and wanted to express my interest.'
-    };
+    const { recruiterId, role } = req.body;
+    const candidate = await User.findByPk(req.user.id, { include: ['candidateProfile', 'skills'] });
+    const recruiter = recruiterId ? await Recruiter.findByPk(recruiterId) : null;
+
+    const OpenAI = (await import('openai')).default;
+    const config = (await import('../config/index.js')).default;
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+    const systemPrompt = `You are an expert career coach writing a personalized recruiter outreach message.
+    Write a concise, professional, and compelling message. Return JSON: {"subject": "string", "content": "string"}`;
+
+    const userPrompt = `Candidate: ${candidate.firstName} ${candidate.lastName}
+Headline: ${candidate.candidateProfile?.headline || 'Software Engineer'}
+Skills: ${candidate.skills?.map(s => s.name).join(', ')}
+Recruiter: ${recruiter?.name || 'Hiring Manager'} at ${recruiter?.company || 'the company'}
+Role: ${role || 'Software Engineer'}
+
+Write a personalized outreach message.`;
+
+    const response = await openai.chat.completions.create({
+      model: config.openai.model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
+    });
+
+    const message = JSON.parse(response.choices[0].message.content);
     res.json({ success: true, message });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

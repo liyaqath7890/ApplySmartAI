@@ -7,29 +7,60 @@ const openai = new OpenAI({ apiKey: config.openai.apiKey });
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const { role } = req.user;
-    let stats = {};
+    const candidateId = req.user.id;
+    
+    // Import needed models
+    const { InterviewSession, Resume } = await import('../routes/models/index.js');
 
-    if (role === 'candidate') {
-      const applications = await Application.count({ where: { candidateId: req.user.id } });
-      const interviews = await Application.count({ 
-        where: { candidateId: req.user.id, status: 'interview' } 
-      });
-      
-      stats = {
-        applications,
-        interviews,
-        offers: 0,
-        applicationRate: 0
-      };
-    } else if (role === 'recruiter') {
-      const jobs = await Job.count({ where: { recruiterId: req.user.id } });
-      const totalApps = await Application.count({
-        include: [{ model: Job, as: 'job', where: { recruiterId: req.user.id } }]
-      });
-      
-      stats = { jobs, totalApplications: totalApps };
-    }
+    // Application stats by status
+    const [totalApps, interviewCount, offerCount, rejectedCount, appliedCount] = await Promise.all([
+      Application.count({ where: { candidateId } }),
+      Application.count({ where: { candidateId, status: 'interview' } }),
+      Application.count({ where: { candidateId, status: { [Op.in]: ['offer', 'accepted'] } } }),
+      Application.count({ where: { candidateId, status: 'rejected' } }),
+      Application.count({ where: { candidateId, status: 'applied' } }),
+    ]);
+
+    // Interview scores
+    const completedSessions = await InterviewSession.findAll({
+      where: { candidateId, status: 'completed' },
+      attributes: ['overallScore'],
+    });
+    const avgInterviewScore = completedSessions.length
+      ? completedSessions.reduce((sum, s) => sum + (s.overallScore || 0), 0) / completedSessions.length
+      : 0;
+
+    // Resume ATS score (primary or most recent)
+    const primaryResume = await Resume.findOne({
+      where: { candidateId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    // Applications in last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentApps = await Application.count({
+      where: { candidateId, createdAt: { [Op.gte]: thirtyDaysAgo } }
+    });
+
+    // Conversion rates
+    const interviewRate = totalApps > 0 ? Math.round((interviewCount / totalApps) * 100) : 0;
+    const offerRate = interviewCount > 0 ? Math.round((offerCount / interviewCount) * 100) : 0;
+
+    const stats = {
+      totalApplications: totalApps,
+      applicationsByStatus: {
+        applied: appliedCount,
+        interview: interviewCount,
+        offer: offerCount,
+        rejected: rejectedCount
+      },
+      interviewConversionRate: interviewRate,
+      offerConversionRate: offerRate,
+      avgInterviewScore: Math.round(avgInterviewScore * 10) / 10,
+      totalInterviewSessions: completedSessions.length,
+      primaryResumeAtsScore: primaryResume?.atsScore || 0,
+      applicationsLast30Days: recentApps
+    };
 
     res.json({ success: true, stats });
   } catch (error) {

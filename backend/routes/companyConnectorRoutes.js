@@ -18,10 +18,25 @@ import { aggregationLimiter } from '../middleware/rateLimiters.js';
 const router = express.Router();
 
 // List all registered companies
-router.get('/', protect, (req, res) => {
-  const companies = CompanyConnectorService.listCompanies();
+router.get('/', protect, catchAsync(async (req, res, next) => {
+  let companies = CompanyConnectorService.listCompanies();
+  const user = req.user;
+
+  try {
+    const { CandidateProfile } = await import('./models/index.js');
+    const profile = await CandidateProfile.findOne({ where: { userId: user.id } });
+    const saved = profile?.savedCompanies || [];
+
+    companies = companies.map(c => ({
+      ...c,
+      isSaved: saved.includes(c.id || c.companyId)
+    }));
+  } catch (error) {
+    console.error('Error attaching saved companies status:', error);
+  }
+
   res.json({ success: true, count: companies.length, data: companies });
-});
+}));
 
 // Health status of all connectors
 router.get('/health', protect, (req, res) => {
@@ -65,17 +80,57 @@ router.post('/register', protect, requirePermission('admin:queues'), catchAsync(
 
   try {
     CompanyConnectorService.addCompany(companyId, platform);
-    res.status(201).json({ success: true, message: `Registered ${companyId} → ${platform}` });
+    res.status(201).json({ success: true, message: `Company ${companyId} registered for platform ${platform}` });
   } catch (err) {
     return next(new AppError(err.message, 400));
   }
 }));
 
-// Clear connector cache (admin)
-router.delete('/cache', protect, requirePermission('admin:queues'), (req, res) => {
-  const { companyId } = req.query;
-  CompanyConnectorService.clearCache(companyId || null);
+// Clear connector cache (Admin)
+router.delete('/cache', protect, requirePermission('manage_system'), (req, res) => {
+  const { companyId } = req.body; // optional
+  if (companyId) {
+    CompanyConnectorService.clearCache(companyId);
+  } else {
+    CompanyConnectorService.clearCache();
+  }
   res.json({ success: true, message: companyId ? `Cache cleared for ${companyId}` : 'All cache cleared' });
 });
+
+// Bookmark a company
+router.post('/:companyId/bookmark', protect, catchAsync(async (req, res, next) => {
+  const { companyId } = req.params;
+  const user = req.user;
+
+  const { CandidateProfile } = await import('./models/index.js');
+  const profile = await CandidateProfile.findOne({ where: { userId: user.id } });
+
+  if (!profile) return next(new AppError('Candidate profile not found', 404));
+
+  const savedCompanies = profile.savedCompanies || [];
+  if (!savedCompanies.includes(companyId)) {
+    savedCompanies.push(companyId);
+    await profile.update({ savedCompanies });
+  }
+
+  res.json({ success: true, savedCompanies });
+}));
+
+// Unbookmark a company
+router.delete('/:companyId/bookmark', protect, catchAsync(async (req, res, next) => {
+  const { companyId } = req.params;
+  const user = req.user;
+
+  const { CandidateProfile } = await import('./models/index.js');
+  const profile = await CandidateProfile.findOne({ where: { userId: user.id } });
+
+  if (!profile) return next(new AppError('Candidate profile not found', 404));
+
+  let savedCompanies = profile.savedCompanies || [];
+  savedCompanies = savedCompanies.filter(id => id !== companyId);
+  await profile.update({ savedCompanies });
+
+  res.json({ success: true, savedCompanies });
+}));
 
 export default router;

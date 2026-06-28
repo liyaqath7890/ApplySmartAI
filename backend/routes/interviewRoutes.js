@@ -3,7 +3,8 @@ import {
   createSession,
   getSession,
   submitAnswer,
-  getSessions
+  getSessions,
+  getWeakAreas
 } from '../controllers/interviewController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -15,5 +16,6 @@ router.post('/sessions', createSession);
 router.get('/sessions', getSessions);
 router.get('/sessions/:sessionId', getSession);
 router.post('/sessions/:sessionId/questions/:questionId/answer', submitAnswer);
+router.get('/weak-areas', getWeakAreas);
 
 export default router;

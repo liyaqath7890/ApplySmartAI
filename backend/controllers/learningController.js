@@ -107,33 +107,114 @@ async function generateGapAnalysis(user, job) {
   const userSkills = user.skills?.map(s => s.name).join(', ') || 'None';
   const jobSkills = job?.requiredSkills?.map(s => s.name).join(', ') || 'Not specified';
   
-  const prompt = `Analyze skill gaps.
-User Skills: ${userSkills}
+  const systemPrompt = `Analyze skill gaps between a candidate's skills and the target job requirements.
+  Return JSON with this schema:
+  {
+    "gaps": [
+      {
+        "skill": "string",
+        "current": "none|beginner|intermediate|advanced|expert",
+        "required": "beginner|intermediate|advanced|expert",
+        "level": "low|medium|high|critical",
+        "priority": 1-10,
+        "resources": ["string"]
+      }
+    ],
+    "summary": "string",
+    "recommendations": ["string"]
+  }`;
+
+  const userPrompt = `User Skills: ${userSkills}
 ${job ? `Job Skills Required: ${jobSkills}\nJob Description: ${job.description}` : 'General career growth'}
 
-Return JSON:
-{
-  "gaps": [
-    {
-      "skill": string,
-      "current": "none"|"beginner"|"intermediate"|"advanced"|"expert",
-      "required": "beginner"|"intermediate"|"advanced"|"expert",
-      "level": "low"|"medium"|"high"|"critical",
-      "priority": 1-10,
-      "resources": [string]
-    }
-  ],
-  "summary": string,
-  "recommendations": [string]
-}`;
+Provide the skill gap analysis.`;
 
   const response = await openai.chat.completions.create({
     model: config.openai.model,
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.5
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.3,
+    response_format: { type: 'json_object' }
   });
 
-  const content = response.choices[0].message.content;
-  const match = content.match(/\{[\s\S]*\}/);
-  return match ? JSON.parse(match[0]) : { gaps: [], summary: 'Analysis complete' };
+  return JSON.parse(response.choices[0].message.content);
 }
+
+// AI-generate a full learning path based on candidate's skill gaps
+export const generateRecommendedPath = async (req, res) => {
+  try {
+    const { targetRole, skillGaps } = req.body;
+    const user = await User.findByPk(req.user.id, { include: ['skills', 'candidateProfile'] });
+
+    const systemPrompt = `You are an expert career coach. Generate a comprehensive, structured learning path.
+    Return JSON:
+    {
+      "title": "string",
+      "targetRole": "string",
+      "estimatedDuration": "string",
+      "steps": [
+        {
+          "title": "string",
+          "description": "string",
+          "resourceType": "course|book|project|certification|tutorial",
+          "resourceUrl": "string",
+          "provider": "string",
+          "estimatedHours": 10,
+          "order": 1,
+          "skillsCovered": ["string"]
+        }
+      ]
+    }`;
+
+    const userPrompt = `Candidate: ${user.firstName} ${user.lastName}
+Current Skills: ${user.skills?.map(s => s.name).join(', ') || 'None'}
+Experience Level: ${user.candidateProfile?.experienceLevel || 'mid'}
+Target Role: ${targetRole || user.candidateProfile?.careerGoal || 'Senior Software Engineer'}
+Skill Gaps to Address: ${(skillGaps || []).join(', ')}
+
+Generate a practical learning path with real, available online resources.`;
+
+    const response = await openai.chat.completions.create({
+      model: config.openai.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.5,
+      response_format: { type: 'json_object' }
+    });
+
+    const pathData = JSON.parse(response.choices[0].message.content);
+    
+    // Persist the AI-generated path to the database
+    const path = await LearningPath.create({
+      candidateId: req.user.id,
+      title: pathData.title,
+      description: `AI-generated path for ${pathData.targetRole}`,
+      goal: targetRole || 'Career Advancement',
+      status: 'planning',
+      aiGenerated: true
+    });
+
+    for (let i = 0; i < (pathData.steps || []).length; i++) {
+      const step = pathData.steps[i];
+      await LearningStep.create({
+        learningPathId: path.id,
+        title: step.title,
+        description: step.description,
+        resourceType: step.resourceType || 'course',
+        resourceUrl: step.resourceUrl || '',
+        estimatedDuration: step.estimatedHours || 10,
+        orderIndex: step.order || i + 1
+      });
+    }
+
+    res.status(201).json({ success: true, path, pathData });
+  } catch (error) {
+    console.error('Generate learning path error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
