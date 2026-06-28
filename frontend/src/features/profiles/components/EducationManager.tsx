@@ -8,7 +8,7 @@ export const EducationManager: React.FC = () => {
   const { education, addEducation, updateEducation, deleteEducation } = useMasterProfileStore();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Education>>({
+  const [formData, setFormData] = useState<Partial<Omit<Education,'id'>>>({
     school: '',
     degree: '',
     fieldOfStudy: '',
@@ -25,9 +25,8 @@ export const EducationManager: React.FC = () => {
       setEditingId(null);
     } else {
       addEducation({
-        id: Date.now().toString(),
-        school: formData.school,
-        degree: formData.degree,
+        school: formData.school!,
+        degree: formData.degree!,
         fieldOfStudy: formData.fieldOfStudy || '',
         startDate: formData.startDate || new Date(),
         endDate: formData.endDate,
@@ -45,7 +44,7 @@ export const EducationManager: React.FC = () => {
     setIsAdding(false);
   };
 
-  const formatDate = (date: Date | undefined) => {
+  const formatDate = (date: Date | string | undefined) => {
     if (!date) return 'Present';
     return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
   };

@@ -1,0 +1,2 @@
+import{i as s}from"./index-rK8oN5x0.js";const r={analyzeSkillGaps:async a=>(await s.post("/learning/skill-gaps",{jobId:a})).data,createLearningPath:async a=>(await s.post("/learning/paths",a)).data,getLearningPaths:async()=>(await s.get("/learning/paths")).data,updateStepProgress:async(a,e)=>(await s.patch(`/learning/steps/${a}`,{isCompleted:e})).data};export{r as l};
+//# sourceMappingURL=learningService-CSzipJeG.js.map

@@ -26,9 +26,9 @@ import {
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function DashboardPage() {
-  const { applications } = useJobPipelineStore();
+  const { applications, fetchPipeline } = useJobPipelineStore();
   const { jobs, computeMatchScores } = useExternalJobStore();
-  const { skills, experience, resumes, personalInfo, education, certifications } = useMasterProfileStore();
+  const { skills, experience, resumes, personalInfo, education, certifications, fetchProfile } = useMasterProfileStore();
   const { atsScore } = useResumeAIStore();
   const { notifications } = useNotificationsStore();
   const { sessionHistory } = useInterviewPrepStore();
@@ -42,6 +42,11 @@ export default function DashboardPage() {
       return end - start;
     }));
   }, [experience]);
+
+  useEffect(() => {
+    fetchPipeline();
+    fetchProfile();
+  }, [fetchPipeline, fetchProfile]);
 
   useEffect(() => {
     if (userSkills.length > 0) computeMatchScores(userSkills, userExpYears);

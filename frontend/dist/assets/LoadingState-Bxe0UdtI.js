@@ -1,0 +1,2 @@
+import{j as e,p as r}from"./index-rK8oN5x0.js";function l({message:s,text:a,fullScreen:n=!1}){const i=s??a??"Loading...",t=e.jsxs("div",{className:"flex flex-col items-center justify-center gap-3 py-12",children:[e.jsx(r,{className:"h-10 w-10 text-primary-600 animate-spin"}),e.jsx("p",{className:"text-sm text-gray-600",children:i})]});return n?e.jsx("div",{className:"min-h-[50vh] flex items-center justify-center",children:t}):t}export{l as L};
+//# sourceMappingURL=LoadingState-Bxe0UdtI.js.map

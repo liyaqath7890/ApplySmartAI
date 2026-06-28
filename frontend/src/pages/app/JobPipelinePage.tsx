@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { PageHeader, StatsCard } from '@/shared/components/ui';
 import { Briefcase, X } from 'lucide-react';
@@ -9,12 +8,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { PipelineColumn } from '@/features/jobs-pipeline/components/PipelineColumn';
 import { ApplicationCard } from '@/features/jobs-pipeline/components/ApplicationCard';
 import { useJobPipelineStore, Application, PipelineStage } from '@/store';
-import { applicationService } from '@/api/services/applicationService';
 import Button from '@/shared/components/ui/Button';
-
-const STATUS_MAP: Record<string, PipelineStage> = {
-  wishlist: 'saved', applied: 'applied', screening: 'screening', interview: 'interview', offer: 'offer', rejected: 'rejected',
-};
 
 const columns = [
   { id: 'saved', title: 'Saved' },
@@ -26,37 +20,13 @@ const columns = [
 ];
 
 const JobPipelinePage: React.FC = () => {
-  const { applications, setApplications, setActiveId, activeId, updateApplicationStage, updateApplicationNotes, setLoading } = useJobPipelineStore();
+  const { applications, fetchPipeline, setApplications, setActiveId, activeId, updateApplicationStage, updateApplicationNotes, isLoading } = useJobPipelineStore();
   const [notesModal, setNotesModal] = useState<Application | null>(null);
   const [notesText, setNotesText] = useState('');
 
-  const { isLoading } = useQuery({
-    queryKey: ['pipeline-applications'],
-    queryFn: () => applicationService.getApplications(),
-    retry: false,
-  });
-
   useEffect(() => {
-    setLoading(isLoading);
-  }, [isLoading, setLoading]);
-
-  useEffect(() => {
-    applicationService.getApplications()
-      .then((data) => {
-        if (data.applications?.length) {
-          setApplications(data.applications.map((a) => ({
-            id: a.id,
-            jobId: a.jobId || a.externalJobId,
-            jobTitle: 'Application',
-            companyName: 'Company',
-            status: STATUS_MAP[a.status] || 'applied',
-            appliedDate: new Date(a.appliedAt || a.createdAt),
-            notes: a.notes,
-          })));
-        }
-      })
-      .catch(() => { /* use persisted store data */ });
-  }, [setApplications]);
+    fetchPipeline();
+  }, [fetchPipeline]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -67,16 +37,17 @@ const JobPipelinePage: React.FC = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) { setActiveId(null); return; }
     const activeItemId = active.id as string;
     const overId = over.id as string;
     const activeApp = applications.find((a) => a.id === activeItemId);
 
     if (activeApp && columns.some((c) => c.id === overId)) {
+      // Dropped onto a column header — move to that stage
       updateApplicationStage(activeItemId, overId as PipelineStage);
       toast.success(`Moved to ${overId}`);
-      applicationService.moveApplication(activeItemId, (overId === 'saved' ? 'wishlist' : overId) as 'applied' | 'screening' | 'interview' | 'offer' | 'rejected' | 'wishlist').catch(() => {});
     } else if (activeApp) {
+      // Dropped onto another card in the same column — reorder locally
       const sameColumnApps = applications.filter((a) => a.status === activeApp.status);
       const oldIndex = sameColumnApps.findIndex((a) => a.id === activeItemId);
       const newIndex = sameColumnApps.findIndex((a) => a.id === overId);

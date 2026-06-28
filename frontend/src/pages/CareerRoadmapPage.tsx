@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { roadmapService } from '../api/services/roadmapService';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { LoadingState } from '@/shared/components/ui';
 
 const CareerRoadmapPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -91,7 +92,7 @@ const CareerRoadmapPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div>Loading...</div>
+        <LoadingState message="Loading career roadmaps..." />
       ) : (
         <div className="space-y-8">
           {roadmapsData?.roadmaps.map((roadmap) => (

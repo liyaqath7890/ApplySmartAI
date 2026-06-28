@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { interviewService, InterviewSession as ApiSession } from '../api/services/interviewService';
+import toast from 'react-hot-toast';
+
 
 export interface InterviewQuestion {
   id: string;
@@ -57,6 +60,8 @@ interface InterviewPrepState {
   isLoading: boolean;
 
   // Actions
+  fetchSessions: () => Promise<void>;
+  createAndStartSession: (interviewType?: string, jobId?: string) => Promise<void>;
   startSession: (category: string, categoryName: string, questions: InterviewQuestion[]) => void;
   submitAnswer: (answer: string, skipped?: boolean) => void;
   nextQuestion: () => void;
@@ -99,6 +104,72 @@ export const useInterviewPrepStore = create<InterviewPrepState>()(
       activeSession: null,
       sessionHistory: [],
       isLoading: false,
+
+      fetchSessions: async () => {
+        set({ isLoading: true });
+        try {
+          const { sessions } = await interviewService.getSessions();
+          const mapped: InterviewSession[] = sessions.map((s: ApiSession) => ({
+            id: s.id,
+            category: s.interviewType || 'general',
+            categoryName: s.interviewType || 'General',
+            startedAt: s.startTime ? new Date(s.startTime) : new Date(s.createdAt),
+            completedAt: s.endTime ? new Date(s.endTime) : undefined,
+            duration: 0,
+            answers: [],
+            overallScore: s.overallScore || 0,
+            communicationScore: 0,
+            technicalScore: 0,
+            totalQuestions: s.totalQuestions || 0,
+            answeredQuestions: s.currentQuestionIndex || 0,
+            skippedQuestions: 0,
+            strengths: [],
+            improvements: [],
+          }));
+          // Merge with local history (backend wins for same IDs)
+          set((state) => {
+            const existingIds = new Set(mapped.map(s => s.id));
+            const localOnly = state.sessionHistory.filter(s => !existingIds.has(s.id));
+            return { sessionHistory: [...mapped, ...localOnly] };
+          });
+        } catch (error) {
+          console.error('Failed to fetch interview sessions', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      createAndStartSession: async (interviewType = 'behavioral', jobId) => {
+        set({ isLoading: true });
+        try {
+          const { session, questions } = await interviewService.createSession({ jobId, interviewType });
+          const mappedQuestions: InterviewQuestion[] = questions.map(q => ({
+            id: q.id,
+            question: q.question,
+            type: (q.questionType || 'behavioral') as any,
+            difficulty: (q.difficultyLevel || 'medium') as any,
+            hint: q.expectedAnswer || undefined,
+          }));
+          set({
+            activeSession: {
+              sessionId: session.id,
+              category: interviewType,
+              categoryName: interviewType.charAt(0).toUpperCase() + interviewType.slice(1),
+              questions: mappedQuestions,
+              currentIndex: 0,
+              answers: [],
+              startedAt: new Date(),
+              questionStartedAt: new Date(),
+              isActive: true,
+            },
+          });
+          toast.success('Interview session started!');
+        } catch (error) {
+          toast.error('Failed to create session — try again');
+        } finally {
+          set({ isLoading: false });
+        }
+      },
 
       startSession: (category, categoryName, questions) => {
         set({

@@ -8,7 +8,7 @@ import { useMasterProfileStore, useJobPipelineStore, useExternalJobStore, Extern
 const JobDiscoveryPage: React.FC = () => {
   const { skills, experience } = useMasterProfileStore();
   const { addApplication } = useJobPipelineStore();
-  const { jobs, filters, setFilters, toggleSave, selectJob, selectedJob, computeMatchScores, isLoading } = useExternalJobStore();
+  const { jobs, filters, setFilters, toggleSave, selectJob, selectedJob, computeMatchScores, isLoading, fetchJobs } = useExternalJobStore();
 
   const userExpYears = useMemo(() => {
     if (experience.length === 0) return 2;
@@ -18,6 +18,10 @@ const JobDiscoveryPage: React.FC = () => {
       return Math.max(1, end - start);
     }));
   }, [experience]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   useEffect(() => {
     const skillNames = skills.map((s) => s.name);

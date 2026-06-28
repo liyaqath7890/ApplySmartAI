@@ -209,7 +209,7 @@ export default function ResumeAnalyzerPage() {
                     <div key={key}>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-dark-600 capitalize">{key}</span>
-                        <span className="text-dark-900 font-medium">{value}%</span>
+                        <span className="text-dark-900 font-medium">{String(value)}%</span>
                       </div>
                       <div className="h-2 bg-dark-200 rounded-full overflow-hidden">
                         <div

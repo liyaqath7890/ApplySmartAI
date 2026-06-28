@@ -164,8 +164,8 @@ export default function ProfilePage() {
               <Button variant="outline" size="sm">Add</Button>
             </div>
             <div className="space-y-4">
-              {profile?.workExperience?.length > 0 ? (
-                profile.workExperience.map((exp: any) => (
+              {(profile?.workExperience?.length ?? 0) > 0 ? (
+                profile!.workExperience!.map((exp: any) => (
                   <div key={exp.id} className="border-l-2 border-primary-200 pl-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -187,6 +187,7 @@ export default function ProfilePage() {
                 ))
               ) : (
                 <EmptyState
+                  icon={Briefcase}
                   title="No experience added"
                   description="Add your work experience to improve your profile."
                 />
@@ -201,8 +202,8 @@ export default function ProfilePage() {
               <Button variant="outline" size="sm">Add</Button>
             </div>
             <div className="space-y-4">
-              {profile?.education?.length > 0 ? (
-                profile.education.map((edu: any) => (
+              {(profile?.education?.length ?? 0) > 0 ? (
+                profile!.education!.map((edu: any) => (
                   <div key={edu.id} className="border-l-2 border-emerald-200 pl-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -226,6 +227,7 @@ export default function ProfilePage() {
                 ))
               ) : (
                 <EmptyState
+                  icon={GraduationCap}
                   title="No education added"
                   description="Add your education history to improve your profile."
                 />
@@ -240,8 +242,8 @@ export default function ProfilePage() {
               <Button variant="outline" size="sm">Add</Button>
             </div>
             <div className="space-y-4">
-              {profile?.certifications?.length > 0 ? (
-                profile.certifications.map((cert: any) => (
+              {(profile?.certifications?.length ?? 0) > 0 ? (
+                profile!.certifications!.map((cert: any) => (
                   <div key={cert.id} className="border-l-2 border-orange-200 pl-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -259,6 +261,7 @@ export default function ProfilePage() {
                 ))
               ) : (
                 <EmptyState
+                  icon={Award}
                   title="No certifications added"
                   description="Add your certifications to improve your profile."
                 />
@@ -273,8 +276,8 @@ export default function ProfilePage() {
               <Button variant="outline" size="sm">Manage</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {profile?.skills?.length > 0 ? (
-                profile.skills.map((skill: any) => (
+              {(profile?.skills?.length ?? 0) > 0 ? (
+                profile!.skills!.map((skill: any) => (
                   <span
                     key={skill.id}
                     className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
@@ -284,6 +287,7 @@ export default function ProfilePage() {
                 ))
               ) : (
                 <EmptyState
+                  icon={Code}
                   title="No skills added"
                   description="Add your skills to improve your profile."
                 />

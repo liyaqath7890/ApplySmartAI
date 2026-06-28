@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { PageHeader, StatsCard, Badge, LoadingState } from '@/shared/components/ui';
 import { agentService, Agent } from '../api/services/agentService';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -42,7 +43,7 @@ const AgentDashboardPage: React.FC = () => {
   };
 
   if (!isAuthenticated) return <div>Please log in</div>;
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <LoadingState message="Loading agents..." />;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

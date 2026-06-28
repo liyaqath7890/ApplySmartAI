@@ -25,7 +25,6 @@ export const CertificationManager: React.FC = () => {
       setEditingId(null);
     } else {
       addCertification({
-        id: Date.now().toString(),
         name: formData.name,
         issuingOrganization: formData.issuingOrganization,
         issueDate: formData.issueDate || new Date(),

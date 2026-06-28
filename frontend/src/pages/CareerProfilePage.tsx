@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Download, Share2, Eye, FileText, Pencil, Trash2 } from 'lucide-react';
+import { LoadingState } from '@/shared/components/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { careerProfileService, CareerProfile } from '../api/services/careerProfileService';
 import { useAuthStore } from '../store/authStore';
@@ -24,7 +26,7 @@ const CareerProfilePage: React.FC = () => {
   });
 
   if (!isAuthenticated) return <div>Please log in</div>;
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <LoadingState message="Loading your career profile..." />;
 
   const profile = profileData?.profile;
 
@@ -113,7 +115,7 @@ const ProfileSection: React.FC<{
     linkedinUrl: profile?.candidateProfile?.linkedinUrl || '',
     githubUrl: profile?.candidateProfile?.githubUrl || '',
     portfolioUrl: profile?.candidateProfile?.portfolioUrl || '',
-    isActivelyLooking: profile?.candidateProfile?.isActivelyLooking || true
+    isActivelyLooking: Boolean(profile?.candidateProfile?.isActivelyLooking ?? true)
   });
 
   const handleSubmit = (e: React.FormEvent) => {

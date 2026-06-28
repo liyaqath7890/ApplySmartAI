@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { learningService } from '../api/services/learningService';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { LoadingState } from '@/shared/components/ui';
 
 const SkillGapPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -48,7 +49,7 @@ const SkillGapPage: React.FC = () => {
       </div>
 
       {pathsLoading ? (
-        <div>Loading...</div>
+        <LoadingState message="Loading skill gap analysis..." />
       ) : (
         <div className="space-y-8">
           {pathsData?.paths.map((path) => (

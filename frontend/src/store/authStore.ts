@@ -31,14 +31,14 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: { id: '1', email: 'test@example.com', firstName: 'Test', lastName: 'User', role: 'candidate', isEmailVerified: true },
-      token: 'mock-token',
+      user: null,
+      token: null,
       refreshToken: null,
-      isAuthenticated: true,
+      isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      setAuth: (user: User, token: string, refreshToken: string | null) =>
+      setAuth: (user: User, token: string, refreshToken: string | null) => {
         set({
           user,
           token,
@@ -46,9 +46,15 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isLoading: false,
           error: null,
-        }),
+        });
+        // Lazily connect socket and fetch notifications after auth
+        import('./notificationsStore').then(({ useNotificationsStore }) => {
+          useNotificationsStore.getState().connectSocket(user.id);
+          useNotificationsStore.getState().fetchNotifications();
+        });
+      },
 
-      logout: () =>
+      logout: () => {
         set({
           user: null,
           token: null,
@@ -56,7 +62,11 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           isLoading: false,
           error: null,
-        }),
+        });
+        import('./notificationsStore').then(({ useNotificationsStore }) => {
+          useNotificationsStore.getState().disconnectSocket();
+        });
+      },
 
       setLoading: (loading: boolean) => set({ isLoading: loading }),
 

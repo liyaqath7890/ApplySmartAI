@@ -52,7 +52,8 @@ axiosInstance.interceptors.response.use(
         const { token: newToken, refreshToken: newRefreshToken } = response.data;
         useAuthStore.getState().setAuth(
           useAuthStore.getState().user!,
-          newToken
+          newToken,
+          newRefreshToken
         );
 
         // Update localStorage with new refresh token

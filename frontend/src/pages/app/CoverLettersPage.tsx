@@ -57,7 +57,7 @@ export default function CoverLettersPage() {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    generateMutation.mutate();
+    generateMutation.mutate(undefined);
   };
 
   const handleRewrite = async (id: string) => {

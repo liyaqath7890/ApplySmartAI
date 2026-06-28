@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '../api/services/analyticsService';
 import { useAuthStore } from '../store/authStore';
+import { LoadingState } from '@/shared/components/ui';
 
 const AnalyticsPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -40,7 +41,7 @@ const AnalyticsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {statsLoading ? (
-          <div>Loading...</div>
+          <LoadingState message="Loading dashboard statistics..." />
         ) : (
           Object.entries(statsData?.stats || {}).map(([key, value]) => (
             <div key={key} className="bg-white p-6 rounded-lg shadow">
@@ -72,8 +73,8 @@ const AnalyticsPage: React.FC = () => {
             </button>
           </div>
           {salaryLoading ? (
-            <div>Loading...</div>
-          ) : salaryData ? (
+            <LoadingState message="Loading salary prediction..." />
+          ) : salaryData && (
             <div>
               <p className="text-2xl font-bold">
                 ${salaryData.prediction.median?.toLocaleString() || 'N/A'}
@@ -82,7 +83,7 @@ const AnalyticsPage: React.FC = () => {
                 Range: ${salaryData.prediction.min?.toLocaleString() || 'N/A'} - ${salaryData.prediction.max?.toLocaleString() || 'N/A'}
               </p>
             </div>
-          ) : null}
+          )}
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow">
@@ -103,8 +104,8 @@ const AnalyticsPage: React.FC = () => {
             </button>
           </div>
           {demandLoading ? (
-            <div>Loading...</div>
-          ) : demandData ? (
+            <LoadingState message="Loading market demand..." />
+          ) : demandData && (
             <div>
               <p className={`text-2xl font-bold ${
                 demandData.demand.demand === 'high' ? 'text-green-600' :
@@ -116,7 +117,7 @@ const AnalyticsPage: React.FC = () => {
                 Growth: {demandData.demand.growth || 'N/A'}
               </p>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 

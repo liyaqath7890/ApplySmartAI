@@ -26,7 +26,6 @@ export const ExperienceManager: React.FC = () => {
       setEditingId(null);
     } else {
       addExperience({
-        id: Date.now().toString(),
         company: formData.company,
         position: formData.position,
         location: formData.location || '',

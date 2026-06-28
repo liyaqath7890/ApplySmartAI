@@ -86,12 +86,13 @@ interface Column {
 }
 
 const statusColumns: Column[] = [
-  { key: 'wishlist', title: 'Wishlist', color: 'bg-gray-100 text-gray-700' },
+  { key: 'saved', title: 'Saved', color: 'bg-gray-100 text-gray-700' },
   { key: 'applied', title: 'Applied', color: 'bg-blue-100 text-blue-700' },
-  { key: 'screening', title: 'Screening', color: 'bg-purple-100 text-purple-700' },
   { key: 'interview', title: 'Interview', color: 'bg-amber-100 text-amber-700' },
   { key: 'offer', title: 'Offer', color: 'bg-emerald-100 text-emerald-700' },
+  { key: 'accepted', title: 'Accepted', color: 'bg-emerald-100 text-emerald-700' },
   { key: 'rejected', title: 'Rejected', color: 'bg-red-100 text-red-700' },
+  { key: 'withdrawn', title: 'Withdrawn', color: 'bg-gray-100 text-gray-700' },
 ];
 
 export default function ApplicationsPage() {
@@ -281,7 +282,7 @@ export default function ApplicationsPage() {
                 />
               ) : (
                 <div className="space-y-8">
-                  {data.applications.map((app, index) => (
+                  {data?.applications.map((app, index) => (
                     <div key={app.id} className="relative pl-8">
                       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                       <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-primary-600 border-4 border-white"></div>

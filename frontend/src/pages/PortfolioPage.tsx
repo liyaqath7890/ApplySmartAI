@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { portfolioService } from '../api/services/portfolioService';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { LoadingState } from '@/shared/components/ui';
 
 const PortfolioPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -68,7 +69,7 @@ const PortfolioPage: React.FC = () => {
           </div>
 
           {portfoliosLoading ? (
-            <div>Loading...</div>
+            <LoadingState message="Loading portfolios..." />
           ) : (
             <div className="space-y-4">
               {portfolioData?.portfolios.map((portfolio) => (
@@ -114,7 +115,7 @@ const PortfolioPage: React.FC = () => {
           </div>
 
           {brandsLoading ? (
-            <div>Loading...</div>
+            <LoadingState message="Loading personal branding..." />
           ) : (
             <div className="space-y-4">
               {brandsData?.brands.map((brand) => (
