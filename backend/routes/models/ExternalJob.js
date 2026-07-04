@@ -17,13 +17,7 @@ const ExternalJob = sequelize.define('ExternalJob', {
     onDelete: 'SET NULL'
   },
   platform: {
-    type: DataTypes.ENUM(
-      // Original platforms
-      'linkedin', 'naukri', 'foundit', 'wellfound', 'instahyre', 'indeed', 'cutshort', 'hirist',
-      // New aggregation platforms
-      'adzuna', 'jsearch', 'arbeitnow', 'remoteok', 'remotive', 'usajobs',
-      'greenhouse', 'lever', 'ashby', 'rss', 'company-career'
-    ),
+    type: DataTypes.STRING,
     allowNull: false
   },
   externalJobId: {
@@ -67,19 +61,19 @@ const ExternalJob = sequelize.define('ExternalJob', {
     allowNull: true
   },
   employmentType: {
-    type: DataTypes.ENUM('full-time', 'part-time', 'contract', 'internship', 'freelance'),
+    type: DataTypes.STRING,
     allowNull: true
   },
   experienceLevel: {
-    type: DataTypes.ENUM('entry', 'mid', 'senior', 'lead', 'executive'),
+    type: DataTypes.STRING,
     allowNull: true
   },
   workType: {
-    type: DataTypes.ENUM('remote', 'hybrid', 'on-site'),
+    type: DataTypes.STRING,
     allowNull: true
   },
   jobUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1000),
     allowNull: false,
     validate: {
       isUrl: true
@@ -120,6 +114,81 @@ const ExternalJob = sequelize.define('ExternalJob', {
   source: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+
+  // Version 1.1 Metadata
+  jobRole: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  department: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  skills: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  experience: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  education: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  state: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  country: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  fresherEligible: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  internship: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  applicationDeadline: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  lastUpdated: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  hiringStatus: {
+    type: DataTypes.STRING,
+    defaultValue: 'active'
+  },
+  numberOfVacancies: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
+  },
+  atsPlatform: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  companyId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'Company',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
+  originalJobUrl: {
+    type: DataTypes.STRING(1000),
+    allowNull: true
   }
 }, {
   underscored: true,
@@ -130,6 +199,11 @@ const ExternalJob = sequelize.define('ExternalJob', {
     { fields: ['is_expired'] },
     { fields: ['match_score'] },
     { fields: ['posted_date'] },
+    { fields: ['company_id'] },
+    { fields: ['city', 'state', 'country'] },
+    { fields: ['fresher_eligible'] },
+    { fields: ['internship'] },
+    { fields: ['ats_platform'] },
     { unique: true, fields: ['platform', 'external_job_id'] }
   ]
 });

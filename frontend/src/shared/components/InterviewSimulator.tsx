@@ -33,14 +33,14 @@ export default function InterviewSimulator({ onComplete }: InterviewSimulatorPro
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!answer.trim()) {
       toast.error('Please enter an answer or skip the question');
       return;
     }
-    submitAnswer(answer);
+    await submitAnswer(answer);
     if (isLastQuestion) {
-      const result = endSession();
+      const result = await endSession();
       toast.success(`Session complete! Score: ${result?.overallScore ?? 0}%`);
       onComplete?.(result?.id ?? '');
     } else {
@@ -49,10 +49,10 @@ export default function InterviewSimulator({ onComplete }: InterviewSimulatorPro
     }
   }, [answer, isLastQuestion, submitAnswer, nextQuestion, endSession, onComplete]);
 
-  const handleSkip = useCallback(() => {
-    submitAnswer('', true);
+  const handleSkip = useCallback(async () => {
+    await submitAnswer('', true);
     if (isLastQuestion) {
-      const result = endSession();
+      const result = await endSession();
       toast.success(`Session complete! Score: ${result?.overallScore ?? 0}%`);
       onComplete?.(result?.id ?? '');
     } else {
@@ -60,8 +60,8 @@ export default function InterviewSimulator({ onComplete }: InterviewSimulatorPro
     }
   }, [isLastQuestion, submitAnswer, nextQuestion, endSession, onComplete]);
 
-  const handleEndEarly = () => {
-    const result = endSession();
+  const handleEndEarly = async () => {
+    const result = await endSession();
     toast.success(`Session ended. Score: ${result?.overallScore ?? 0}%`);
     onComplete?.(result?.id ?? '');
   };

@@ -49,6 +49,9 @@ import ResumeVersionV2 from './ResumeVersionV2.js';
 import JobAnalysisV2 from './JobAnalysisV2.js';
 import InterviewPrepV2 from './InterviewPrepV2.js';
 import ApplicationPackage from './ApplicationPackage.js';
+import Company from './Company.js';
+import SavedCompany from './SavedCompany.js';
+
 
 // User associations
 User.hasOne(CandidateProfile, { foreignKey: 'userId', as: 'candidateProfile' });
@@ -276,6 +279,12 @@ User.hasMany(InterviewPrepV2, { foreignKey: 'candidateId', as: 'interviewPrepsV2
 InterviewPrepV2.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
 InterviewPrepV2.belongsTo(Interview, { foreignKey: 'interviewId', as: 'interview' });
 
+// Company & SavedCompany associations
+Company.belongsToMany(CandidateProfile, { through: SavedCompany, as: 'savedCompaniesList', foreignKey: 'companyId' });
+CandidateProfile.belongsToMany(Company, { through: SavedCompany, as: 'savedCompaniesList', foreignKey: 'candidateProfileId' });
+Company.hasMany(ExternalJob, { foreignKey: 'companyId', as: 'externalJobs' });
+ExternalJob.belongsTo(Company, { foreignKey: 'companyId', as: 'companyDetails' });
+
 // Export all models
 export {
   sequelize,
@@ -329,7 +338,9 @@ export {
   ResumeVersionV2,
   JobAnalysisV2,
   InterviewPrepV2,
-  ApplicationPackage
+  ApplicationPackage,
+  Company,
+  SavedCompany
 };
 
 export default {
@@ -384,5 +395,7 @@ export default {
   ResumeVersionV2,
   JobAnalysisV2,
   InterviewPrepV2,
-  ApplicationPackage
+  ApplicationPackage,
+  Company,
+  SavedCompany
 };

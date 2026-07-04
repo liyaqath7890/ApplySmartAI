@@ -1,3 +1,12 @@
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T14:01:31.508Z"}
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T14:03:57.423Z"}
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T14:07:15.333Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T16:50:38.410Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T16:51:05.277Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T16:53:29.616Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-28T16:54:05.711Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:33:22.360Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:33:28.712Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:34:18.506Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:34:59.757Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:35:31.320Z"}

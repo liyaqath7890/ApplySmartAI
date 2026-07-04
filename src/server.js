@@ -44,6 +44,7 @@ import jobAggregationRoutes from '../backend/routes/jobAggregationRoutes.js';
 import metricsRoutes               from '../backend/routes/metricsRoutes.js';
 import companyConnectorRoutes      from '../backend/routes/companyConnectorRoutes.js';
 import applicationTrackingRoutes   from '../backend/routes/applicationTrackingRoutes.js';
+import companiesRoutes             from '../backend/routes/companies.js';  // v1.1 DB-driven
 
 // Import middleware
 import { globalErrorHandler, notFoundHandler } from '../backend/middleware/errorHandler.js';
@@ -125,7 +126,8 @@ app.use('/api/job-aggregation',               jobAggregationRoutes);
 
 // ── New Infrastructure Routes ─────────────────────────────────────────────────
 app.use('/api',                               metricsRoutes);           // /api/metrics, /api/health/*
-app.use('/api/company-connectors',            companyConnectorRoutes);  // Phase 8
+app.use('/api/company-connectors',            companyConnectorRoutes);  // Phase 8 (legacy)
+app.use('/api/companies',                     companiesRoutes);          // v1.1 DB-driven
 app.use('/api/applications',                  applicationTrackingRoutes); // Phase 9
 
 // Health check (simple — detailed version is at /api/health/detailed via metricsRoutes)

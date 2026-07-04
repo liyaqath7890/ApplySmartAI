@@ -1,96 +1,12 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader, Button } from '@/shared/components/ui';
 import { Sparkles, FileText, Download, Save, RefreshCw, Plus, Trash2, CheckCircle2, Copy } from 'lucide-react';
 import { useCoverLetterAIStore } from '@/store';
+import { coverLetterService, CoverLetter } from '@/api/services/coverLetterService';
 
-interface SavedLetter {
-  id: string;
-  title: string;
-  content: string;
-  company: string;
-  role: string;
-  createdAt: Date;
-  isTemplate: boolean;
-}
 
-const TEMPLATES = [
-  {
-    id: 't1', name: 'Software Engineer', category: 'Tech',
-    content: `Dear Hiring Manager,
-
-I am writing to express my strong interest in the [ROLE] position at [COMPANY]. With [X] years of experience in software development and a proven track record of delivering scalable solutions, I am confident in my ability to contribute meaningfully to your team.
-
-In my current role, I have [ACHIEVEMENT 1]. I have also [ACHIEVEMENT 2], which directly aligns with the requirements outlined in your job posting.
-
-What excites me most about [COMPANY] is [COMPANY SPECIFIC REASON]. Your commitment to [VALUE] resonates deeply with my own professional philosophy.
-
-I would welcome the opportunity to discuss how my experience can help drive [COMPANY]'s continued success. Thank you for your time and consideration.
-
-Sincerely,
-[YOUR NAME]`
-  },
-  {
-    id: 't2', name: 'Product Manager', category: 'Product',
-    content: `Dear [HIRING MANAGER],
-
-I am excited to apply for the [ROLE] role at [COMPANY]. Having spent [X] years bridging the gap between customer needs and technical execution, I bring a data-driven approach and deep empathy for users to every product decision.
-
-At [PREVIOUS COMPANY], I led the development of [PRODUCT/FEATURE], which resulted in [METRIC]. I specialize in [SKILL 1], [SKILL 2], and [SKILL 3] — capabilities I believe are essential for this role.
-
-Thank you for considering my application. I look forward to the opportunity to contribute to [COMPANY]'s mission.
-
-Best regards,
-[YOUR NAME]`
-  },
-  {
-    id: 't3', name: 'Data Scientist', category: 'Data',
-    content: `Dear Hiring Team,
-
-I am applying for the [ROLE] position at [COMPANY] with great enthusiasm. My background in machine learning, statistical analysis, and business intelligence positions me well to drive data-informed decisions at scale.
-
-During my tenure at [PREVIOUS COMPANY], I developed [ML MODEL/ANALYSIS] that improved [METRIC] by [PERCENTAGE]. I am proficient in Python, SQL, TensorFlow, and have extensive experience with [TOOL/PLATFORM].
-
-I am particularly drawn to [COMPANY] because of your innovative use of data in [AREA]. I am eager to bring my expertise to your team.
-
-Warmly,
-[YOUR NAME]`
-  },
-];
-
-const generateLetter = (company: string, role: string, description: string, tone: string): string => {
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const toneIntro: Record<string, string> = {
-    Professional: 'I am writing to express my strong interest in',
-    Enthusiastic: 'I am thrilled and excited to apply for',
-    Concise: 'I am applying for',
-    Creative: 'When I came across the opportunity for',
-  };
-  const intro = toneIntro[tone] || toneIntro['Professional'];
-
-  return `John Doe
-john.doe@email.com | +1 (555) 123-4567 | San Francisco, CA
-${today}
-
-Hiring Manager
-${company || 'The Company'}
-[Company Address]
-
-Dear Hiring Manager,
-
-${intro} the ${role || 'open'} position at ${company || 'your company'}. With 5+ years of experience in full-stack development and a passion for building products that scale, I am confident in my ability to make an immediate impact on your team.
-
-${description ? `Having reviewed your job description carefully, I am particularly excited about the emphasis on ${description.slice(0, 80).trim()}... My background directly aligns with these requirements.` : 'My background in React, TypeScript, Node.js, and cloud architecture directly aligns with the requirements outlined in your posting.'}
-
-At TechCorp Inc., I led a cross-functional team of 4 engineers to architect and ship a real-time data platform that reduced dashboard load times by 40% and increased user engagement by 25%. Before that, at StartupXYZ, I built the entire MVP from the ground up — reaching 10,000 users in just 3 months.
-
-What draws me to ${company || 'your company'} specifically is your reputation for engineering excellence and your commitment to solving meaningful problems at scale. I believe strongly in the culture of continuous improvement and would be energized to contribute to your mission.
-
-I would welcome the opportunity to discuss how my experience can help ${company || 'your team'} achieve its goals. Thank you for your time and consideration.
-
-Sincerely,
-John Doe`;
-};
 
 export default function CoverLetterAIPage() {
   const { setCurrentCoverLetter, setGenerating } = useCoverLetterAIStore();
@@ -100,16 +16,15 @@ export default function CoverLetterAIPage() {
   const [tone, setTone] = useState('Professional');
   const [content, setContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [savedLetters, setSavedLetters] = useState<SavedLetter[]>([
-    {
-      id: '1', title: 'TechCorp - Senior Frontend Engineer', company: 'TechCorp Inc.',
-      role: 'Senior Frontend Engineer', createdAt: new Date('2025-06-01'), isTemplate: false,
-      content: generateLetter('TechCorp Inc.', 'Senior Frontend Engineer', '', 'Professional'),
-    },
-  ]);
-  const [activeView, setActiveView] = useState<'create' | 'saved' | 'templates'>('create');
+  const queryClient = useQueryClient();
+  const { data: savedLettersData } = useQuery({
+    queryKey: ['coverLetters'],
+    queryFn: () => coverLetterService.getCoverLetters(),
+  });
+  const savedLetters = savedLettersData?.coverLetters || [];
+
+  const [activeView, setActiveView] = useState<'create' | 'saved'>('create');
   const [successMsg, setSuccessMsg] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('t1');
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -120,26 +35,42 @@ export default function CoverLetterAIPage() {
     if (!company.trim() || !role.trim()) return;
     setIsGenerating(true);
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 2000));
-    const letter = generateLetter(company, role, description, tone);
-    setContent(letter);
-    setCurrentCoverLetter({ title: `${company} - ${role}`, content: letter, isTemplate: false });
-    setIsGenerating(false);
-    setGenerating(false);
-    toast.success('Cover letter generated!');
+    try {
+      const res = await coverLetterService.generateCoverLetter({
+        jobData: { title: role, company, description },
+        tone,
+      });
+      const letter = res.coverLetter.content;
+      setContent(letter);
+      setCurrentCoverLetter({ title: res.coverLetter.title, content: letter, isTemplate: false });
+      queryClient.invalidateQueries({ queryKey: ['coverLetters'] });
+      toast.success('Cover letter generated!');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to generate cover letter');
+    } finally {
+      setIsGenerating(false);
+      setGenerating(false);
+    }
   };
+
+  const saveMutation = useMutation({
+    mutationFn: (data: any) => coverLetterService.createCoverLetter(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coverLetters'] });
+      showSuccess('Cover letter saved!');
+    },
+    onError: () => {
+      toast.error('Failed to save cover letter');
+    },
+  });
 
   const handleSave = () => {
     if (!content) return;
-    const letter: SavedLetter = {
-      id: Date.now().toString(),
+    saveMutation.mutate({
       title: `${company} - ${role}`,
-      company, role, content,
-      createdAt: new Date(),
-      isTemplate: false,
-    };
-    setSavedLetters(prev => [letter, ...prev]);
-    showSuccess('Cover letter saved!');
+      content,
+      isAiGenerated: true,
+    });
   };
 
   const handleCopy = () => {
@@ -147,22 +78,26 @@ export default function CoverLetterAIPage() {
     showSuccess('Copied to clipboard!');
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => coverLetterService.deleteCoverLetter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coverLetters'] });
+    },
+  });
+
   const handleDeleteLetter = (id: string) => {
-    setSavedLetters(prev => prev.filter(l => l.id !== id));
+    deleteMutation.mutate(id);
   };
 
-  const handleLoadTemplate = (templateId: string) => {
-    const t = TEMPLATES.find(t => t.id === templateId);
-    if (t) {
-      setContent(t.content);
-      setActiveView('create');
-      showSuccess('Template loaded — fill in the placeholders!');
+  const handleLoadSaved = (letter: CoverLetter) => {
+    const parts = letter.title.split(' - ');
+    if (parts.length >= 2) {
+      setCompany(parts[0]);
+      setRole(parts[1]);
+    } else {
+      setCompany('');
+      setRole(letter.title);
     }
-  };
-
-  const handleLoadSaved = (letter: SavedLetter) => {
-    setCompany(letter.company);
-    setRole(letter.role);
     setContent(letter.content);
     setActiveView('create');
   };
@@ -179,7 +114,7 @@ export default function CoverLetterAIPage() {
 
       {/* View Tabs */}
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {(['create', 'saved', 'templates'] as const).map(v => (
+        {(['create', 'saved'] as const).map(v => (
           <button
             key={v}
             onClick={() => setActiveView(v)}
@@ -256,22 +191,7 @@ export default function CoverLetterAIPage() {
               </div>
             </div>
 
-            {/* Quick Load Templates */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-3">Quick Templates</h3>
-              <div className="space-y-2">
-                {TEMPLATES.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleLoadTemplate(t.id)}
-                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all"
-                  >
-                    <p className="text-sm font-medium text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.category}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+
           </div>
 
           {/* Editor Panel */}
@@ -354,24 +274,7 @@ export default function CoverLetterAIPage() {
         </div>
       )}
 
-      {activeView === 'templates' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {TEMPLATES.map(t => (
-            <div key={t.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-primary-400 transition-all">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h4 className="font-semibold text-gray-900">{t.name}</h4>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{t.category}</span>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 line-clamp-4 mb-4 leading-relaxed">{t.content}</p>
-              <Button className="w-full" onClick={() => handleLoadTemplate(t.id)}>
-                Use Template
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+
     </div>
   );
 }

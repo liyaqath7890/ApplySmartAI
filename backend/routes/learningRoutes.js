@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   analyzeSkillGaps,
+  getSkillGaps,
   createLearningPath,
   getLearningPaths,
   updateStepProgress,
@@ -12,6 +13,7 @@ const router = express.Router();
 
 router.use(protect);
 
+router.get('/skill-gaps', getSkillGaps);
 router.post('/skill-gaps', analyzeSkillGaps);
 router.post('/paths', createLearningPath);
 router.post('/paths/ai-generate', generateRecommendedPath);

@@ -1,11 +1,11 @@
-import { BaseJobProvider } from './BaseProvider.js';
+import { BaseATSProvider } from './BaseATSProvider.js';
 
 /**
  * Lever Career Page Adapter
  * Scrapes jobs from company career pages powered by Lever
  * Documentation: https://hire.lever.co/
  */
-export class LeverProvider extends BaseJobProvider {
+export class LeverProvider extends BaseATSProvider {
   constructor(adapterConfig = {}) {
     super(adapterConfig);
     this.baseUrl = adapterConfig.baseUrl || 'https://api.lever.co/v0/postings';

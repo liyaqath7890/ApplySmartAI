@@ -7,6 +7,7 @@ import { Sparkles, TrendingUp, Target, DollarSign, Award, RefreshCw } from 'luci
 import { LearningRoadmap } from '@/features/career-twin/components/LearningRoadmap';
 import { useCareerTwinStore, useMasterProfileStore } from '@/store';
 import { careerTwinService } from '@/api/services/v2/careerTwinService';
+import { analyticsService } from '@/api/services/analyticsService';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar,
 } from 'recharts';
@@ -43,15 +44,22 @@ const CareerTwinPage: React.FC = () => {
     toast.success('Career plan regenerated from your profile');
   };
 
+  const { data: salaryPredictionData } = useQuery({
+    queryKey: ['career-twin-salary-prediction', plan?.targetRole],
+    queryFn: () => analyticsService.getSalaryPrediction({ jobTitle: plan?.targetRole, experience: profileData.experience }),
+    enabled: !!plan?.targetRole,
+    retry: false,
+  });
+
   const salaryData = useMemo(() => {
-    if (!plan) return [];
-    const base = plan.salaryRange.min;
-    return [0, 1, 2, 3, 4].map((i) => ({
+    if (!salaryPredictionData?.prediction) return [];
+    const base = salaryPredictionData.prediction.median;
+    return [0, 1, 2, 3, 4].map((i: number) => ({
       year: String(new Date().getFullYear() + i),
-      salary: Math.round(base * (1 + i * 0.12)),
-      market: Math.round(base * 1.05 * (1 + i * 0.1)),
+      salary: Math.round(base * (1 + i * 0.05)), // Assuming backend will eventually return trajectory, using minimal growth for chart
+      market: Math.round(base * 1.05 * (1 + i * 0.03)),
     }));
-  }, [plan]);
+  }, [salaryPredictionData]);
 
   const skillReadinessData = useMemo(() => {
     if (!plan) return skills.slice(0, 5).map((s) => ({ skill: s.name, readiness: s.proficiency === 'expert' ? 95 : s.proficiency === 'advanced' ? 85 : 65 }));
@@ -85,7 +93,7 @@ const CareerTwinPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard title="Target Role" value={plan?.targetRole || '—'} icon={TrendingUp} description={plan?.timeline || ''} />
-        <StatsCard title="Salary Range" value={plan ? `$${(plan.salaryRange.min / 1000).toFixed(0)}k–$${(plan.salaryRange.max / 1000).toFixed(0)}k` : '—'} icon={DollarSign} trend="up" />
+        <StatsCard title="Salary Range" value={salaryPredictionData?.prediction ? `$${(salaryPredictionData.prediction.min / 1000).toFixed(0)}k–$${(salaryPredictionData.prediction.max / 1000).toFixed(0)}k` : '—'} icon={DollarSign} trend="up" />
         <StatsCard title="Plan Progress" value={`${progress}%`} icon={Target} description={`${activeTimeframe}-day milestones`} />
         <StatsCard title="Confidence" value={plan ? `${plan.confidence}%` : '—'} icon={Award} description="career readiness" />
       </div>

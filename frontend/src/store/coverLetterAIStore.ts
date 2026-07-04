@@ -22,7 +22,7 @@ interface CoverLetterAIState {
 
   // Actions
   fetchCoverLetters: () => Promise<void>;
-  generateCoverLetter: (jobId?: string) => Promise<void>;
+  generateCoverLetter: (params?: { jobId?: string; jobData?: { title: string; company: string; description: string; }; tone?: string; customPrompt?: string }) => Promise<void>;
   saveCoverLetter: () => Promise<void>;
   setCurrentCoverLetter: (letter: Partial<CoverLetter>) => void;
   setTemplates: (templates: CoverLetter[]) => void;
@@ -63,10 +63,10 @@ export const useCoverLetterAIStore = create<CoverLetterAIState>((set, get) => ({
     }
   },
 
-  generateCoverLetter: async (jobId) => {
+  generateCoverLetter: async (params) => {
     set({ isGenerating: true });
     try {
-      const { coverLetter } = await coverLetterService.generateCoverLetter(jobId);
+      const { coverLetter } = await coverLetterService.generateCoverLetter(params || {});
       set({
         currentCoverLetter: {
           id: coverLetter.id,

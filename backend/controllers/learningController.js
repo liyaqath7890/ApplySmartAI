@@ -217,4 +217,14 @@ Generate a practical learning path with real, available online resources.`;
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
+export const getSkillGaps = async (req, res) => {
+  try {
+    const gaps = await SkillGap.findAll({
+      where: { candidateId: req.user.id },
+      order: [['priority', 'DESC']]
+    });
+    res.json({ success: true, gaps });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

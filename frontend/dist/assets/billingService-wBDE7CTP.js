@@ -1,0 +1,2 @@
+import{f as n}from"./index-DGPe9-gR.js";const a={getPlans:async()=>(await n.get("/billing/plans")).data,createCheckoutSession:async s=>(await n.post("/billing/checkout",{planId:s})).data,getSubscription:async()=>(await n.get("/billing/subscription")).data,cancelSubscription:async()=>(await n.post("/billing/subscription/cancel")).data};export{a as b};
+//# sourceMappingURL=billingService-wBDE7CTP.js.map

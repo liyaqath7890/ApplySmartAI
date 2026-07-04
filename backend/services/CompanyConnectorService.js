@@ -1,96 +1,101 @@
 /**
- * CompanyConnectorService
+ * CompanyConnectorService (v1.1 — Database-Driven)
  *
- * Orchestrates per-company job fetching across Greenhouse, Lever and Ashby.
- * Each connector supports: fetch, normalize, cache, retry, log, health check, pagination.
+ * Orchestrates per-company job fetching via a dynamic ATS provider registry.
+ * All company data is persisted in the `Company` table.
+ * No hardcoded company-to-platform mappings.
  *
- * This service is a thin orchestration layer on top of the existing providers.
- * It adds:
- *   • In-memory TTL cache per company (configurable, default 1 hour)
- *   • Per-company health status tracking
- *   • Paginated fetch support
- *   • Detailed per-connector logging
+ * Provider Registry pattern:
+ *   Any ATS adapter (Greenhouse, Lever, Ashby, Workday, etc.) implements BaseATSProvider
+ *   and registers itself via CompanyConnectorService.registerProvider(platformKey, ProviderInstance).
+ *
+ * Sync Management:
+ *   - Per-company TTL cache (in-memory)
+ *   - Per-company health status tracked in the Company DB record
+ *   - Paginated fetch support
+ *   - Detailed sync logging stored in Company.syncLogs
  */
 
 import { GreenhouseProvider } from './jobAggregation/providers/GreenhouseProvider.js';
 import { LeverProvider }      from './jobAggregation/providers/LeverProvider.js';
 import { AshbyProvider }      from './jobAggregation/providers/AshbyProvider.js';
+import jobQueueService        from './JobQueueService.js';
 import logger                 from '../utils/logger.js';
 
-// ── Connector registry ─────────────────────────────────────────────────────────
-
-const PLATFORM_PROVIDERS = {
-  greenhouse: GreenhouseProvider,
-  lever:      LeverProvider,
-  ashby:      AshbyProvider,
-};
-
-// Company → platform mapping (extend via addCompany / config file)
-const DEFAULT_COMPANIES = {
-  // Greenhouse
-  airbnb:     'greenhouse',
-  lyft:       'greenhouse',
-  shopify:    'greenhouse',
-  stripe:     'greenhouse',
-  square:     'greenhouse',
-  doordash:   'greenhouse',
-  coinbase:   'greenhouse',
-  robinhood:  'greenhouse',
-  brex:       'greenhouse',
-  plaid:      'greenhouse',
-
-  // Lever
-  coursera:   'lever',
-  figma:      'lever',
-  canva:      'lever',
-  notion:     'lever',
-  airtable:   'lever',
-  zapier:     'lever',
-  hubspot:    'lever',
-  asana:      'lever',
-
-  // Ashby
-  linear:     'ashby',
-  vercel:     'ashby',
-  supabase:   'ashby',
-  clerk:      'ashby',
-  resend:     'ashby',
-  calcom:     'ashby',
+// ── Built-in provider instances ────────────────────────────────────────────────
+const BUILTIN_PROVIDERS = {
+  greenhouse: new GreenhouseProvider({}),
+  lever:      new LeverProvider({}),
+  ashby:      new AshbyProvider({}),
 };
 
 export class CompanyConnectorService {
   constructor({ cacheTTLMs = 60 * 60 * 1000 } = {}) {
     this.cacheTTLMs = cacheTTLMs;
-    this.cache = new Map();       // key → { jobs, fetchedAt }
-    this.health = new Map();      // companyId → { status, lastChecked, error }
-    this.companies = { ...DEFAULT_COMPANIES };
-
-    // Instantiate one provider per platform (shared, stateless)
-    this.providers = {};
-    for (const [platform, ProviderClass] of Object.entries(PLATFORM_PROVIDERS)) {
-      this.providers[platform] = new ProviderClass({});
-    }
+    this.cache = new Map();    // key: `companyId:page` → { jobs, fetchedAt }
+    this.providers = { ...BUILTIN_PROVIDERS };
   }
 
   /**
-   * Add or override a company → platform mapping.
+   * Register a new ATS provider at runtime.
+   * @param {string} platform - e.g. 'workday', 'icims'
+   * @param {BaseATSProvider} providerInstance
    */
-  addCompany(companyId, platform) {
-    if (!PLATFORM_PROVIDERS[platform]) {
-      throw new Error(`Unknown platform: ${platform}. Supported: ${Object.keys(PLATFORM_PROVIDERS).join(', ')}`);
-    }
-    this.companies[companyId] = platform;
-    logger.info(`CompanyConnector: registered ${companyId} → ${platform}`);
+  registerProvider(platform, providerInstance) {
+    this.providers[platform] = providerInstance;
+    logger.info(`CompanyConnector: registered provider → ${platform}`);
   }
 
   /**
-   * Fetch jobs for a single company, with caching.
-   *
-   * @param {string} companyId   — e.g. 'stripe', 'linear'
-   * @param {object} options     — { page, forceRefresh, keyword }
-   * @returns {Promise<object[]>} Normalised job objects
+   * Get a provider by platform key.
+   * @param {string} platform
+   */
+  getProvider(platform) {
+    const provider = this.providers[platform];
+    if (!provider) throw new Error(`No provider registered for platform: "${platform}". Supported: ${Object.keys(this.providers).join(', ')}`);
+    return provider;
+  }
+
+  /**
+   * List all registered provider platform names.
+   */
+  listProviders() {
+    return Object.keys(this.providers);
+  }
+
+  // ── Database-driven API ────────────────────────────────────────────────────
+
+  /**
+   * List all active companies from database.
+   */
+  async listCompanies(filters = {}) {
+    const { Company } = await import('../routes/models/index.js');
+    const { Op } = await import('sequelize');
+    const where = { activeStatus: true };
+    if (filters.industry) where.industry = filters.industry;
+    if (filters.atsPlatform) where.atsPlatform = filters.atsPlatform;
+    if (filters.verificationStatus) where.verificationStatus = filters.verificationStatus;
+    return Company.findAll({ where, order: [['name', 'ASC']] });
+  }
+
+  /**
+   * Register (create) a new company in the database.
+   */
+  async registerCompany(data) {
+    const { Company } = await import('../routes/models/index.js');
+    if (!this.providers[data.atsPlatform]) {
+      throw new Error(`Unknown ATS platform: "${data.atsPlatform}". Registered: ${Object.keys(this.providers).join(', ')}`);
+    }
+    const company = await Company.create(data);
+    logger.info(`CompanyConnector: created company "${company.name}" (${company.atsPlatform})`);
+    return company;
+  }
+
+  /**
+   * Fetch jobs for a Company record (by DB id), with in-memory cache.
    */
   async fetchCompanyJobs(companyId, options = {}) {
+    const { Company } = await import('../routes/models/index.js');
     const { page = 1, forceRefresh = false, keyword = '' } = options;
     const cacheKey = `${companyId}:${page}`;
 
@@ -98,128 +103,127 @@ export class CompanyConnectorService {
     if (!forceRefresh) {
       const cached = this.cache.get(cacheKey);
       if (cached && Date.now() - cached.fetchedAt < this.cacheTTLMs) {
-        logger.info(`CompanyConnector: cache hit for ${companyId} (page ${page})`);
+        logger.info(`CompanyConnector: cache hit — ${companyId} (page ${page})`);
         return this._filterByKeyword(cached.jobs, keyword);
       }
     }
 
-    const platform = this.companies[companyId];
-    if (!platform) {
-      throw new Error(`Unknown company: ${companyId}. Register it with addCompany().`);
-    }
+    const company = await Company.findByPk(companyId);
+    if (!company) throw new Error(`Company not found: ${companyId}`);
+    if (!company.atsPlatform) throw new Error(`Company "${company.name}" has no atsPlatform configured`);
 
-    const provider = this.providers[platform];
+    const provider = this.getProvider(company.atsPlatform);
 
     try {
-      const raw = await provider.fetchCompanyJobs(companyId, { page, keyword });
-      const jobs = (raw || []).map(j => {
+      // Mark as syncing
+      await company.update({ schedulerStatus: 'syncing' });
+
+      const rawJobs = await provider.fetchCompanyJobs(company, { page, keyword });
+      const jobs = (rawJobs || []).map(j => {
         try { return provider.normalizeJob(j); } catch { return null; }
       }).filter(Boolean);
 
       // Update cache
       this.cache.set(cacheKey, { jobs, fetchedAt: Date.now() });
 
-      // Mark healthy
-      this.health.set(companyId, {
-        status: 'healthy',
-        lastChecked: new Date().toISOString(),
-        jobCount: jobs.length,
-        platform,
+      // Update company sync stats
+      const now = new Date().toISOString();
+      const existingLogs = company.syncLogs || [];
+      const newLog = { timestamp: now, jobCount: jobs.length, status: 'success', page };
+      await company.update({
+        schedulerStatus: 'idle',
+        lastSyncTime: now,
+        lastSuccessfulSync: now,
+        failedSyncCount: 0,
+        activeJobs: jobs.length,
+        syncLogs: [...existingLogs.slice(-49), newLog] // Keep last 50 logs
       });
 
-      logger.info(`CompanyConnector: ${companyId} (${platform}) — ${jobs.length} jobs (page ${page})`);
+      logger.info(`CompanyConnector: "${company.name}" (${company.atsPlatform}) — ${jobs.length} jobs (page ${page})`);
       return this._filterByKeyword(jobs, keyword);
     } catch (err) {
-      this.health.set(companyId, {
-        status: 'unhealthy',
-        lastChecked: new Date().toISOString(),
-        error: err.message,
-        platform,
+      const now = new Date().toISOString();
+      const existingLogs = company.syncLogs || [];
+      const newLog = { timestamp: now, status: 'failed', error: err.message, page };
+      await company.update({
+        schedulerStatus: 'failed',
+        failedSyncCount: (company.failedSyncCount || 0) + 1,
+        syncLogs: [...existingLogs.slice(-49), newLog]
       });
 
-      logger.error(`CompanyConnector: ${companyId} failed — ${err.message}`);
+      logger.error(`CompanyConnector: "${company.name}" sync failed — ${err.message}`);
       throw err;
     }
   }
 
   /**
    * Fetch all pages for a company (full paginated sync).
-   *
-   * @param {string} companyId
-   * @param {object} options  — { maxPages, keyword, forceRefresh }
-   * @returns {Promise<object[]>}
    */
   async fetchAllPages(companyId, options = {}) {
     const { maxPages = 10, keyword = '', forceRefresh = false } = options;
     const allJobs = [];
-
     for (let page = 1; page <= maxPages; page++) {
       try {
         const jobs = await this.fetchCompanyJobs(companyId, { page, keyword, forceRefresh });
-        if (!jobs.length) break; // No more pages
+        if (!jobs.length) break;
         allJobs.push(...jobs);
         if (jobs.length < 20) break; // Likely last page
       } catch {
-        break; // Stop on error but return what we have
+        break;
       }
     }
-
     return allJobs;
   }
 
   /**
-   * Fetch jobs from all registered companies.
-   *
-   * @param {object} options — { platforms, keyword, maxConcurrency }
-   * @returns {Promise<object[]>}
+   * Sync all active companies that are due for a sync.
+   * Called by SchedulerService.
    */
-  async fetchAllCompanies(options = {}) {
-    const { platforms = null, keyword = '', maxConcurrency = 5 } = options;
+  async syncDueCompanies() {
+    const { Company } = await import('../routes/models/index.js');
+    const now = Date.now();
+    const companies = await Company.findAll({ where: { activeStatus: true, schedulerStatus: ['idle', 'failed'] } });
 
-    const companies = Object.entries(this.companies)
-      .filter(([, platform]) => !platforms || platforms.includes(platform))
-      .map(([companyId]) => companyId);
+    const results = [];
+    for (const company of companies) {
+      const syncIntervalMs = this._syncFrequencyToMs(company.syncFrequency);
+      const lastSync = company.lastSyncTime ? new Date(company.lastSyncTime).getTime() : 0;
+      if (now - lastSync < syncIntervalMs) continue; // Not due yet
 
-    const allJobs = [];
-    const batches = chunk(companies, maxConcurrency);
-
-    for (const batch of batches) {
-      const results = await Promise.allSettled(
-        batch.map(companyId => this.fetchCompanyJobs(companyId, { keyword }))
-      );
-
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          allJobs.push(...result.value);
+      try {
+        const jobs = await this.fetchCompanyJobs(company.id, { forceRefresh: true });
+        
+        // Dispatch job alerts if there are new jobs found
+        if (jobs && jobs.length > 0) {
+          await jobQueueService.dispatchCompanyJobAlerts(company, jobs);
         }
+
+        results.push({ companyId: company.id, name: company.name, jobCount: jobs.length, status: 'success' });
+      } catch (err) {
+        results.push({ companyId: company.id, name: company.name, error: err.message, status: 'failed' });
       }
     }
-
-    return allJobs;
+    return results;
   }
 
   /**
-   * Health status for all companies.
+   * Health status for all active companies (from DB).
    */
-  getHealthStatus() {
-    const status = {};
-    for (const [companyId, platform] of Object.entries(this.companies)) {
-      status[companyId] = this.health.get(companyId) || {
-        status: 'unknown',
-        platform,
-        lastChecked: null,
-      };
-    }
+  async getHealthStatus() {
+    const { Company } = await import('../routes/models/index.js');
+    const companies = await Company.findAll({ attributes: ['id', 'name', 'atsPlatform', 'schedulerStatus', 'lastSyncTime', 'lastSuccessfulSync', 'failedSyncCount', 'activeJobs'] });
+    const healthy = companies.filter(c => c.schedulerStatus === 'idle').length;
+    const failed  = companies.filter(c => c.schedulerStatus === 'failed').length;
     return {
-      total: Object.keys(this.companies).length,
-      healthy: [...this.health.values()].filter(h => h.status === 'healthy').length,
-      unhealthy: [...this.health.values()].filter(h => h.status === 'unhealthy').length,
-      companies: status,
+      total: companies.length,
+      healthy,
+      failed,
+      companies: companies.map(c => c.toJSON())
     };
   }
 
   /**
-   * Clear cache for a company or all companies.
+   * Clear in-memory cache for a specific company or all.
    */
   clearCache(companyId = null) {
     if (companyId) {
@@ -229,16 +233,10 @@ export class CompanyConnectorService {
     } else {
       this.cache.clear();
     }
+    logger.info(`CompanyConnector: cache cleared${companyId ? ` for ${companyId}` : ''}`);
   }
 
-  /**
-   * List all registered companies.
-   */
-  listCompanies() {
-    return Object.entries(this.companies).map(([id, platform]) => ({ id, platform }));
-  }
-
-  // ── Private helpers ─────────────────────────────────────────────────────────
+  // ── Private helpers ──────────────────────────────────────────────────────────
 
   _filterByKeyword(jobs, keyword) {
     if (!keyword) return jobs;
@@ -249,12 +247,15 @@ export class CompanyConnectorService {
       (j.company || '').toLowerCase().includes(kw)
     );
   }
-}
 
-function chunk(arr, size) {
-  const chunks = [];
-  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
-  return chunks;
+  _syncFrequencyToMs(frequency) {
+    switch (frequency) {
+      case 'hourly':  return 60 * 60 * 1000;
+      case 'daily':   return 24 * 60 * 60 * 1000;
+      case 'weekly':  return 7 * 24 * 60 * 60 * 1000;
+      default:        return 24 * 60 * 60 * 1000;
+    }
+  }
 }
 
 export default new CompanyConnectorService();

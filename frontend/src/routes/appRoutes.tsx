@@ -33,6 +33,8 @@ const AnalyticsPage = lazy(() => import('@/pages/app/AnalyticsPage'));
 const RecruitersPage = lazy(() => import('@/pages/app/RecruitersPage'));
 const ReferralsPage = lazy(() => import('@/pages/app/ReferralsPage'));
 const CompaniesPage = lazy(() => import('@/pages/app/CompaniesPage'));
+const CompanyDetailsPage = lazy(() => import('@/pages/app/CompanyDetailsPage'));
+const SavedCompaniesPage = lazy(() => import('@/pages/app/SavedCompaniesPage'));
 const LearningPathPage = lazy(() => import('@/pages/app/LearningPathPage'));
 const SkillGapPage = lazy(() => import('@/pages/app/SkillGapPage'));
 const AppBillingPage = lazy(() => import('@/pages/app/AppBillingPage'));
@@ -58,6 +60,8 @@ export const appRoutes: AppRoute[] = [
   { path: 'recruiters', element: <RecruitersPage />, title: 'Recruiters', icon: Users },
   { path: 'referrals', element: <ReferralsPage />, title: 'Referrals', icon: Share2 },
   { path: 'companies', element: <CompaniesPage />, title: 'Companies', icon: Building2 },
+  { path: 'companies/:id', element: <CompanyDetailsPage />, title: 'Company Details', icon: Building2 },
+  { path: 'companies/saved', element: <SavedCompaniesPage />, title: 'Saved Companies', icon: Building2 },
   { path: 'learning-path', element: <LearningPathPage />, title: 'Learning Path', icon: BookOpen },
   { path: 'skill-gap', element: <SkillGapPage />, title: 'Skill Gap Analysis', icon: GraduationCap },
   { path: 'billing', element: <AppBillingPage />, title: 'Billing', icon: CreditCard },

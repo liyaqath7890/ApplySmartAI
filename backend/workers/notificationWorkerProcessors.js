@@ -47,8 +47,11 @@ export async function notificationProcessor(job) {
       actionUrl: notification.actionUrl,
     });
 
-    // 3. Email if requested
-    if (data.sendEmail && data.email) {
+    // 3. Email if requested or specific type handling
+    if (type === 'company_job_alert') {
+      const { company, jobs } = data;
+      await NotificationService.sendCompanyJobAlert(userId, job.data.userEmail, company, jobs);
+    } else if (data.sendEmail && data.email) {
       await NotificationService.sendEmail({
         to:      data.email,
         subject: data.title || type,

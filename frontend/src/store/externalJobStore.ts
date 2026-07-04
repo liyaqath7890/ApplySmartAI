@@ -50,7 +50,6 @@ interface ExternalJobState {
   resetFilters: () => void;
   toggleSave: (id: string) => void;
   selectJob: (job: ExternalJob | null) => void;
-  computeMatchScores: (userSkills: string[], userExperience: number) => void;
   setLoading: (v: boolean) => void;
 }
 
@@ -121,35 +120,7 @@ export const useExternalJobStore = create<ExternalJobState>((set, get) => ({
 
   selectJob: (job) => set({ selectedJob: job }),
 
-  computeMatchScores: (userSkills, userExperience) => {
-    const userSkillsLower = userSkills.map(s => s.toLowerCase());
-    const expLevels: Record<string, number> = { Entry: 0, Junior: 1, Mid: 2, Senior: 3, Lead: 4, Principal: 5 };
-    const userExpLevel = userExperience >= 8 ? 4 : userExperience >= 5 ? 3 : userExperience >= 3 ? 2 : userExperience >= 1 ? 1 : 0;
 
-    set((state) => ({
-      jobs: state.jobs.map(job => {
-        const jobSkillsLower = job.skills.map(s => s.toLowerCase());
-        const matched = jobSkillsLower.filter(s => userSkillsLower.includes(s));
-        const missing = job.skills.filter(s => !userSkillsLower.includes(s.toLowerCase()));
-        const skillMatch = Math.round((matched.length / Math.max(jobSkillsLower.length, 1)) * 100);
-
-        const jobExpLevel = expLevels[job.experience] ?? 2;
-        const expDiff = Math.abs(userExpLevel - jobExpLevel);
-        const expMatch = Math.max(0, 100 - expDiff * 25);
-
-        const locationMatch = job.locationType === 'Remote' ? 100 : 70;
-        const matchScore = Math.round(skillMatch * 0.5 + expMatch * 0.3 + locationMatch * 0.2);
-
-        return {
-          ...job,
-          matchScore: Math.min(99, Math.max(10, matchScore)),
-          missingSkills: missing,
-          atsPrediction: Math.min(99, matchScore + Math.floor(Math.random() * 10) - 5),
-          interviewDifficulty: matchScore >= 75 ? 'Easy' : matchScore >= 50 ? 'Medium' : 'Hard',
-        } as ExternalJob;
-      }),
-    }));
-  },
 
   setLoading: (v) => set({ isLoading: v }),
 }));

@@ -27,67 +27,7 @@ interface Module {
   locked: boolean;
 }
 
-const COURSES: Course[] = [
-  {
-    id: '1', title: 'Advanced React Patterns & Performance', provider: 'Frontend Masters',
-    duration: '8h 30m', level: 'Advanced', category: 'Frontend', progress: 65,
-    rating: 4.9, enrolled: true, completed: false,
-    modules: [
-      { id: 'm1', title: 'Compound Components Pattern', duration: '45m', completed: true, locked: false },
-      { id: 'm2', title: 'Render Props & HOCs', duration: '50m', completed: true, locked: false },
-      { id: 'm3', title: 'Custom Hooks Deep Dive', duration: '1h', completed: true, locked: false },
-      { id: 'm4', title: 'Suspense & Concurrent Mode', duration: '1h 15m', completed: false, locked: false },
-      { id: 'm5', title: 'Performance Optimization', duration: '1h 30m', completed: false, locked: true },
-      { id: 'm6', title: 'Testing Patterns', duration: '2h', completed: false, locked: true },
-    ],
-  },
-  {
-    id: '2', title: 'TypeScript: From Zero to Hero', provider: 'Udemy',
-    duration: '12h', level: 'Intermediate', category: 'Frontend', progress: 100,
-    rating: 4.8, enrolled: true, completed: true,
-    modules: [
-      { id: 'm1', title: 'Type System Fundamentals', duration: '2h', completed: true, locked: false },
-      { id: 'm2', title: 'Generics & Advanced Types', duration: '3h', completed: true, locked: false },
-      { id: 'm3', title: 'TypeScript with React', duration: '4h', completed: true, locked: false },
-      { id: 'm4', title: 'Decorators & Metadata', duration: '3h', completed: true, locked: false },
-    ],
-  },
-  {
-    id: '3', title: 'System Design Fundamentals', provider: 'ByteByteGo',
-    duration: '15h', level: 'Advanced', category: 'Architecture', progress: 20,
-    rating: 4.9, enrolled: true, completed: false,
-    modules: [
-      { id: 'm1', title: 'Scalability Basics', duration: '2h', completed: true, locked: false },
-      { id: 'm2', title: 'Databases & Caching', duration: '3h', completed: false, locked: false },
-      { id: 'm3', title: 'Load Balancing', duration: '2h', completed: false, locked: true },
-      { id: 'm4', title: 'Microservices Architecture', duration: '4h', completed: false, locked: true },
-      { id: 'm5', title: 'Real-world Case Studies', duration: '4h', completed: false, locked: true },
-    ],
-  },
-  {
-    id: '4', title: 'AWS Solutions Architect', provider: 'A Cloud Guru',
-    duration: '20h', level: 'Intermediate', category: 'Cloud', progress: 0,
-    rating: 4.7, enrolled: false, completed: false,
-    modules: [
-      { id: 'm1', title: 'AWS Core Services', duration: '4h', completed: false, locked: false },
-      { id: 'm2', title: 'VPC & Networking', duration: '3h', completed: false, locked: true },
-      { id: 'm3', title: 'Security & IAM', duration: '4h', completed: false, locked: true },
-      { id: 'm4', title: 'Databases on AWS', duration: '5h', completed: false, locked: true },
-      { id: 'm5', title: 'Practice Exams', duration: '4h', completed: false, locked: true },
-    ],
-  },
-  {
-    id: '5', title: 'Node.js Microservices with Docker', provider: 'Pluralsight',
-    duration: '10h', level: 'Advanced', category: 'Backend', progress: 0,
-    rating: 4.6, enrolled: false, completed: false,
-    modules: [
-      { id: 'm1', title: 'Docker Fundamentals', duration: '2h', completed: false, locked: false },
-      { id: 'm2', title: 'Building Microservices', duration: '3h', completed: false, locked: true },
-      { id: 'm3', title: 'Service Communication', duration: '2h', completed: false, locked: true },
-      { id: 'm4', title: 'Kubernetes Orchestration', duration: '3h', completed: false, locked: true },
-    ],
-  },
-];
+
 
 const LEVEL_COLORS: Record<string, string> = {
   Beginner: 'bg-emerald-100 text-emerald-700',
@@ -96,7 +36,7 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 export default function LearningPathPage() {
-  const [courses, setCourses] = useState<Course[]>(COURSES);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [expandedCourse, setExpandedCourse] = useState<string | null>('1');
   const [activeFilter, setActiveFilter] = useState('All');
   const [successMsg, setSuccessMsg] = useState('');

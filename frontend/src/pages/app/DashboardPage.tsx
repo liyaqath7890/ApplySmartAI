@@ -20,14 +20,14 @@ import {
 import { analyticsService } from '@/api/services/analyticsService';
 import { calculateProfileCompleteness } from '@/utils/profileCompleteness';
 import {
-  computePipelineFunnel, computeWeeklyApplications, computeSkillDemand, getTopMatchedJobs,
+  computePipelineFunnel, computeWeeklyApplications, getTopMatchedJobs,
 } from '@/utils/dashboardMetrics';
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function DashboardPage() {
   const { applications, fetchPipeline } = useJobPipelineStore();
-  const { jobs, computeMatchScores } = useExternalJobStore();
+  const { jobs } = useExternalJobStore();
   const { skills, experience, resumes, personalInfo, education, certifications, fetchProfile } = useMasterProfileStore();
   const { atsScore } = useResumeAIStore();
   const { notifications } = useNotificationsStore();
@@ -48,10 +48,6 @@ export default function DashboardPage() {
     fetchProfile();
   }, [fetchPipeline, fetchProfile]);
 
-  useEffect(() => {
-    if (userSkills.length > 0) computeMatchScores(userSkills, userExpYears);
-  }, [userSkills, userExpYears, computeMatchScores]);
-
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
     queryKey: ['dashboard-analytics'],
     queryFn: () => analyticsService.getDashboardStats(),
@@ -62,7 +58,12 @@ export default function DashboardPage() {
   const topJobs = getTopMatchedJobs(jobs, 3);
   const funnelData = computePipelineFunnel(applications);
   const weeklyData = computeWeeklyApplications(applications);
-  const skillDemand = computeSkillDemand(skills);
+  
+  const { data: skillTrendsData } = useQuery({
+    queryKey: ['dashboard-skill-trends'],
+    queryFn: () => analyticsService.getSkillTrends(),
+    retry: false,
+  });
 
   const totalApplications = applications.filter((a) => a.status !== 'saved').length;
   const interviewsScheduled = applications.filter((a) => a.status === 'interview').length;
@@ -113,7 +114,7 @@ export default function DashboardPage() {
         <StatsCard title="Interviews" value={(apiStats?.interviews ?? interviewsScheduled).toString()} icon={Calendar} trend="neutral" description="scheduled" />
         <StatsCard title="Offers" value={(apiStats?.offers ?? offers).toString()} icon={Award} trend="neutral" description="received" />
         <StatsCard title="Profile Score" value={profileResult.score.toString()} icon={Award} trend={profileResult.score >= 80 ? 'up' : 'neutral'} description="out of 100" />
-        <StatsCard title="ATS Score" value={(avgAts || '—').toString()} icon={Zap} trend="up" trendValue="2%" description="average" />
+        <StatsCard title="ATS Score" value={((apiStats?.primaryResumeAtsScore ?? avgAts) || '—').toString()} icon={Zap} trend="up" trendValue="2%" description="average" />
         <StatsCard title="Resumes" value={resumes.length.toString()} icon={Save} trend="neutral" description="uploaded" />
       </div>
 
@@ -259,17 +260,20 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Trending Skills</h2>
             <div className="space-y-3">
-              {skillDemand.slice(0, 4).map((skill, i) => (
+              {skillTrendsData?.trends?.trending?.slice(0, 4).map((skill: string, i: number) => (
                 <div key={i} className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium text-gray-900">{skill.skill}</span>
-                    <span className={`font-semibold ${skill.demand === 'Very High' ? 'text-emerald-600' : 'text-primary-600'}`}>{skill.demand}</span>
+                    <span className="font-medium text-gray-900">{skill}</span>
+                    <span className="font-semibold text-emerald-600">Very High</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${skill.percentage}%` }} />
+                    <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${80 + (4 - i) * 5}%` }} />
                   </div>
                 </div>
               ))}
+              {!skillTrendsData?.trends?.trending && (
+                <div className="text-sm text-gray-500 text-center py-4">Loading trends...</div>
+              )}
             </div>
           </div>
 

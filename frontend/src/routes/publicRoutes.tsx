@@ -5,7 +5,7 @@ const JobsPage = lazy(() => import('@/features/jobs/listings/pages/JobsPage'));
 const JobDetailPage = lazy(() => import('@/features/jobs/listings/pages/JobDetailPage'));
 const ResumeAnalyzerPage = lazy(() => import('@/features/ai/resume-analyzer/pages/ResumeAnalyzerPage'));
 const AICareerCoachPage = lazy(() => import('@/features/ai/career-coach/pages/AICareerCoachPage'));
-const InterviewSimulatorPage = lazy(() => import('@/pages/InterviewSimulatorPage'));
+const InterviewSimulatorPage = lazy(() => import('@/features/ai/interview-agent/pages/InterviewSimulatorPage'));
 
 export const publicRoutes = [
   { path: '', element: <HomePage /> },

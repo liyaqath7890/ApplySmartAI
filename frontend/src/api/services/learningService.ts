@@ -49,6 +49,11 @@ export const learningService = {
     return response.data;
   },
 
+  getSkillGaps: async (): Promise<{ gaps: SkillGap[] }> => {
+    const response = await axios.get('/learning/skill-gaps');
+    return response.data;
+  },
+
   createLearningPath: async (data: any): Promise<{ path: LearningPath }> => {
     const response = await axios.post('/learning/paths', data);
     return response.data;

@@ -1,11 +1,11 @@
-import { BaseJobProvider } from './BaseProvider.js';
+import { BaseATSProvider } from './BaseATSProvider.js';
 
 /**
  * Ashby Career Page Adapter
  * Scrapes jobs from company career pages powered by Ashby
  * Documentation: https://ashbyhq.com/
  */
-export class AshbyProvider extends BaseJobProvider {
+export class AshbyProvider extends BaseATSProvider {
   constructor(adapterConfig = {}) {
     super(adapterConfig);
     this.baseUrl = adapterConfig.baseUrl || 'https://jobs.ashbyhq.com';

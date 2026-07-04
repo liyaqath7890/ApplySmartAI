@@ -37,6 +37,7 @@ export class SchedulerService {
     this._schedule1Hour();
     this._schedule6Hours();
     this._schedule24Hours();
+    this._scheduleCompanySync();  // v1.1 DB-driven
 
     this.started = true;
     logger.info(`SchedulerService started — ${this.tasks.size} tasks active`);
@@ -134,6 +135,28 @@ export class SchedulerService {
   }
 
   // ── Queue helpers ─────────────────────────────────────────────────────────
+
+  // ── DB-driven company sync (v1.1) ─────────────────────────────────────
+
+  _scheduleCompanySync() {
+    // Runs every 30 minutes; syncDueCompanies() only syncs companies whose
+    // individual syncFrequency TTL has expired.
+    const task = cron.schedule('*/30 * * * *', async () => {
+      logger.info('[CRON-company-sync] Running DB-driven company sync');
+      try {
+        // Lazy import to avoid circular deps at startup
+        const { default: connectorService } = await import('./CompanyConnectorService.js');
+        const results = await connectorService.syncDueCompanies();
+        const success = results.filter(r => r.status === 'success').length;
+        const failed  = results.filter(r => r.status === 'failed').length;
+        logger.info(`[CRON-company-sync] Done — ${success} synced, ${failed} failed`);
+      } catch (err) {
+        logger.error(`[CRON-company-sync] Error: ${err.message}`);
+      }
+    }, { timezone: 'UTC' });
+
+    this.tasks.set('company-db-sync-30m', task);
+  }
 
   async _enqueueJobSync({ providers, label }) {
     if (!JobQueueService.initialized) {

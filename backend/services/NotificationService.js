@@ -131,6 +131,66 @@ export class NotificationService {
   }
 
   /**
+   * Send company job alert notification (for followed companies)
+   */
+  async sendCompanyJobAlert(userId, userEmail, company, jobs) {
+    const jobCount = jobs.length;
+    const subject = `🏢 ${jobCount} New Jobs from ${company.name}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>${company.name} is Hiring!</h2>
+        <p>A company you are following has posted ${jobCount} new jobs.</p>
+        
+        ${jobs.slice(0, 10).map(job => `
+          <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin: 10px 0;">
+            <h3 style="margin: 0 0 5px 0;">${job.title}</h3>
+            <p style="margin: 5px 0; color: #666;">
+              ${job.location || 'Remote'}
+            </p>
+            <a href="${job.jobUrl}" 
+               style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+              View Job
+            </a>
+          </div>
+        `).join('')}
+        
+        <div style="margin-top: 20px; text-align: center;">
+          <a href="${config.cors.origin}/app/companies/${company.id}" 
+             style="display: inline-block; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 6px;">
+            View Company Profile
+          </a>
+        </div>
+      </div>
+    `;
+
+    const text = `New Jobs from ${company.name}\n\n${jobs.map(j => `${j.title} - ${j.location || 'Remote'}`).join('\n')}`;
+
+    // Send email
+    const emailResult = await this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+      text
+    });
+
+    // Send realtime notification
+    this.sendRealtimeNotification(userId, 'company-job-alert', {
+      type: 'company_job_alert',
+      companyId: company.id,
+      companyName: company.name,
+      jobCount,
+      jobs: jobs.slice(0, 5).map(j => ({
+        id: j.id,
+        title: j.title,
+        location: j.location
+      }))
+    });
+
+    return emailResult;
+  }
+
+  /**
    * Send application status update
    */
   async sendApplicationUpdate(userId, userEmail, application, status) {

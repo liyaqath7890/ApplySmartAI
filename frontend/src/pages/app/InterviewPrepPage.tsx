@@ -9,7 +9,7 @@ import { CategoryKey } from '@/data/interview';
 import toast from 'react-hot-toast';
 
 const InterviewPrepPage: React.FC = () => {
-  const { activeSession, sessionHistory, startSession, deleteSession } = useInterviewPrepStore();
+  const { activeSession, sessionHistory, createAndStartSession, deleteSession, isLoading } = useInterviewPrepStore();
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('react');
   const [questionCount, setQuestionCount] = useState<5 | 10 | 15>(5);
   const [showSimulator, setShowSimulator] = useState(false);
@@ -37,16 +37,10 @@ const InterviewPrepPage: React.FC = () => {
     return getQuestionsByCategory(selectedCategory).slice(0, 3);
   }, [selectedCategory]);
 
-  const handleStartInterview = () => {
+  const handleStartInterview = async () => {
     const cat = categories.find((c) => c.key === selectedCategory);
-    const questions = generateInterviewSet({ category: selectedCategory, difficulty: 'Mixed', count: questionCount });
-    if (questions.length === 0) {
-      toast.error('No questions available for this category');
-      return;
-    }
-    startSession(selectedCategory, cat?.label || selectedCategory, questions.map(mapQuestionToStore));
+    await createAndStartSession(selectedCategory);
     setShowSimulator(true);
-    toast.success('Interview session started!');
   };
 
   const handleSessionComplete = () => {
@@ -101,9 +95,9 @@ const InterviewPrepPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <Button className="w-full mt-4 flex items-center justify-center gap-2" onClick={handleStartInterview}>
+              <Button className="w-full mt-4 flex items-center justify-center gap-2" onClick={handleStartInterview} disabled={isLoading}>
                 <Play className="h-4 w-4" />
-                Start Interview
+                {isLoading ? 'Starting...' : 'Start Interview'}
               </Button>
             </div>
 

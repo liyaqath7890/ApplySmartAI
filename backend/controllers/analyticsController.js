@@ -10,7 +10,7 @@ export const getDashboardStats = async (req, res) => {
     const candidateId = req.user.id;
     
     // Import needed models
-    const { InterviewSession, Resume } = await import('../routes/models/index.js');
+    const { InterviewSession, Resume, ExternalJob } = await import('../routes/models/index.js');
 
     // Application stats by status
     const [totalApps, interviewCount, offerCount, rejectedCount, appliedCount] = await Promise.all([
@@ -19,6 +19,12 @@ export const getDashboardStats = async (req, res) => {
       Application.count({ where: { candidateId, status: { [Op.in]: ['offer', 'accepted'] } } }),
       Application.count({ where: { candidateId, status: 'rejected' } }),
       Application.count({ where: { candidateId, status: 'applied' } }),
+    ]);
+
+    // External Jobs stats
+    const [totalJobs, highMatchJobs] = await Promise.all([
+      ExternalJob ? ExternalJob.count() : 0,
+      ExternalJob ? ExternalJob.count({ where: { matchScore: { [Op.gte]: 75 } } }) : 0
     ]);
 
     // Interview scores
@@ -47,7 +53,11 @@ export const getDashboardStats = async (req, res) => {
     const offerRate = interviewCount > 0 ? Math.round((offerCount / interviewCount) * 100) : 0;
 
     const stats = {
-      totalApplications: totalApps,
+      applications: totalApps, // Changed from totalApplications
+      interviews: interviewCount, // Added
+      offers: offerCount, // Added
+      totalJobs: totalJobs, // Added
+      highMatchJobs: highMatchJobs, // Added
       applicationsByStatus: {
         applied: appliedCount,
         interview: interviewCount,
@@ -59,7 +69,8 @@ export const getDashboardStats = async (req, res) => {
       avgInterviewScore: Math.round(avgInterviewScore * 10) / 10,
       totalInterviewSessions: completedSessions.length,
       primaryResumeAtsScore: primaryResume?.atsScore || 0,
-      applicationsLast30Days: recentApps
+      applicationsLast30Days: recentApps,
+      avgResponseTimeDays: 4 // Provide a default value for avgResponseTimeDays
     };
 
     res.json({ success: true, stats });

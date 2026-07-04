@@ -13,16 +13,25 @@ interface SkillItem {
   resources: string[];
 }
 
-const INITIAL_SKILLS: SkillItem[] = [
-  { id: '1', name: 'System Design', category: 'Architecture', currentLevel: 30, targetLevel: 85, marketDemand: 'Very High', timeToClose: '3 months', resources: ['ByteByteGo', 'Grokking System Design', 'YouTube: Tech Dummies'] },
-  { id: '2', name: 'AWS / Cloud', category: 'DevOps', currentLevel: 55, targetLevel: 90, marketDemand: 'Very High', timeToClose: '2 months', resources: ['AWS Free Tier', 'A Cloud Guru', 'AWS Docs'] },
-  { id: '3', name: 'Docker & Kubernetes', category: 'DevOps', currentLevel: 40, targetLevel: 80, marketDemand: 'High', timeToClose: '2.5 months', resources: ['Kubernetes.io Docs', 'KodeKloud', 'Pluralsight'] },
-  { id: '4', name: 'GraphQL', category: 'Backend', currentLevel: 25, targetLevel: 75, marketDemand: 'High', timeToClose: '1.5 months', resources: ['GraphQL.org', 'HowToGraphQL', 'Apollo Docs'] },
-  { id: '5', name: 'Testing (Jest/Cypress)', category: 'Quality', currentLevel: 60, targetLevel: 90, marketDemand: 'High', timeToClose: '1 month', resources: ['Testing Library Docs', 'Cypress.io', 'Kent C. Dodds Blog'] },
-  { id: '6', name: 'Team Leadership', category: 'Soft Skills', currentLevel: 70, targetLevel: 90, marketDemand: 'Very High', timeToClose: '6 months', resources: ['The Manager\'s Path', 'Radical Candor', 'Coursera Leadership'] },
-  { id: '7', name: 'React (Advanced)', category: 'Frontend', currentLevel: 90, targetLevel: 95, marketDemand: 'Very High', timeToClose: '1 month', resources: ['React Docs', 'Frontend Masters', 'Kent C. Dodds Epic React'] },
-  { id: '8', name: 'Python', category: 'Backend', currentLevel: 65, targetLevel: 85, marketDemand: 'Very High', timeToClose: '2 months', resources: ['Python.org', 'Real Python', 'FastAPI Docs'] },
-];
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { learningService, SkillGap } from '@/api/services/learningService';
+
+const mapProficiency = (level: string) => {
+  switch (level?.toLowerCase()) {
+    case 'expert': return 95;
+    case 'advanced': return 80;
+    case 'intermediate': return 50;
+    case 'beginner': return 25;
+    default: return 10;
+  }
+};
+
+const mapMarketDemand = (priority: number) => {
+  if (priority >= 4) return 'Very High';
+  if (priority === 3) return 'High';
+  if (priority === 2) return 'Medium';
+  return 'Low';
+};
 
 const DEMAND_COLORS: Record<string, string> = {
   'Very High': 'bg-red-100 text-red-700',
@@ -45,11 +54,37 @@ const PROGRESS_COLOR = (level: number) => {
 };
 
 export default function SkillGapPage() {
-  const [skills, setSkills] = useState<SkillItem[]>(INITIAL_SKILLS);
+  const queryClient = useQueryClient();
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['skillGaps'],
+    queryFn: () => learningService.getSkillGaps()
+  });
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => learningService.analyzeSkillGaps(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['skillGaps'] });
+      showSuccess('Skill gap analysis updated!');
+    }
+  });
+
+  const skills: SkillItem[] = React.useMemo(() => {
+    if (!data?.gaps) return [];
+    return data.gaps.map((g: SkillGap) => ({
+      id: g.id,
+      name: g.skillName,
+      category: 'General', // Backend model currently lacks category, defaulting
+      currentLevel: mapProficiency(g.currentProficiency),
+      targetLevel: mapProficiency(g.requiredProficiency),
+      marketDemand: mapMarketDemand(g.priority),
+      timeToClose: g.estimatedTimeToLearn ? `${g.estimatedTimeToLearn} days` : '1 month',
+      resources: g.learningResources || [],
+    }));
+  }, [data]);
 
   const categories = ['All', ...Array.from(new Set(skills.map(s => s.category)))];
   const filtered = activeCategory === 'All' ? skills : skills.filter(s => s.category === activeCategory);
@@ -61,19 +96,16 @@ export default function SkillGapPage() {
 
   const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000); };
 
-  const handleRunAnalysis = async () => {
-    setIsAnalyzing(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setIsAnalyzing(false);
-    showSuccess('Skill gap analysis updated!');
+  const handleRunAnalysis = () => {
+    analyzeMutation.mutate();
   };
 
   return (
     <div className="space-y-6">
       <PageHeader title="Skill Gap Analysis" subtitle="Identify and close the gaps between your current and target skills" icon={GraduationCap}>
-        <Button onClick={handleRunAnalysis} disabled={isAnalyzing} className="flex items-center gap-2">
-          {isAnalyzing ? <Zap className="h-4 w-4 animate-pulse" /> : <Zap className="h-4 w-4" />}
-          {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
+        <Button onClick={handleRunAnalysis} disabled={analyzeMutation.isPending} className="flex items-center gap-2">
+          {analyzeMutation.isPending ? <Zap className="h-4 w-4 animate-pulse" /> : <Zap className="h-4 w-4" />}
+          {analyzeMutation.isPending ? 'Analyzing...' : 'Run Analysis'}
         </Button>
       </PageHeader>
 

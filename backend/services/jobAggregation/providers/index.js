@@ -20,3 +20,18 @@ export { RSSFeedProvider } from './RSSFeedProvider.js';
 
 // Mock providers for development/testing
 export * from './MockProviders.js';
+
+// ATS / Job Board Stubs
+export { WorkdayProvider } from './WorkdayProvider.js';
+export { SmartRecruitersProvider } from './SmartRecruitersProvider.js';
+export { TeamtailorProvider } from './TeamtailorProvider.js';
+export { OracleProvider } from './OracleProvider.js';
+export { SAPSuccessFactorsProvider } from './SAPSuccessFactorsProvider.js';
+export { DarwinboxProvider } from './DarwinboxProvider.js';
+export { iCIMSProvider } from './iCIMSProvider.js';
+export { TaleoProvider } from './TaleoProvider.js';
+export { InternshalaProvider } from './InternshalaProvider.js';
+export { NaukriProvider } from './NaukriProvider.js';
+export { FounditProvider } from './FounditProvider.js';
+export { ApnaProvider } from './ApnaProvider.js';
+export { GlassdoorProvider } from './GlassdoorProvider.js';

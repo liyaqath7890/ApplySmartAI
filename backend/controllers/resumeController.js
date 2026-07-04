@@ -216,4 +216,128 @@ export const getResumeTemplates = async (req, res) => {
   }
 };
 
+// Delete a resume
+export const deleteResume = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candidateId = req.user.id;
+
+    const resume = await Resume.findOne({ where: { id, candidateId } });
+    if (!resume) {
+      return res.status(404).json({ success: false, error: 'Resume not found' });
+    }
+
+    await resume.destroy();
+    res.json({ success: true, message: 'Resume deleted successfully' });
+  } catch (error) {
+    console.error('Delete resume error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Set primary resume
+export const setPrimary = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candidateId = req.user.id;
+
+    const resume = await Resume.findOne({ where: { id, candidateId } });
+    if (!resume) {
+      return res.status(404).json({ success: false, error: 'Resume not found' });
+    }
+
+    // Set all other resumes to not primary
+    await Resume.update({ isPrimary: false }, { where: { candidateId } });
+    
+    // Set this one as primary
+    await resume.update({ isPrimary: true });
+
+    res.json({ success: true, resume });
+  } catch (error) {
+    console.error('Set primary resume error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Get resume versions
+export const getVersions = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const candidateId = req.user.id;
+
+    const resume = await Resume.findOne({ where: { id, candidateId } });
+    if (!resume) {
+      return res.status(404).json({ success: false, error: 'Resume not found' });
+    }
+
+    const versions = await ResumeVersion.findAll({
+      where: { resumeId: id },
+      order: [['versionNumber', 'DESC']]
+    });
+
+    res.json({ success: true, versions });
+  } catch (error) {
+    console.error('Get versions error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Analyze resume
+import ATSScoringService from '../services/ATSScoringService.js';
+export const analyzeResume = async (req, res) => {
+  try {
+    const { resumeId, jobDescription } = req.body;
+    const candidateId = req.user.id;
+
+    const resume = await Resume.findOne({ where: { id: resumeId, candidateId } });
+    if (!resume) {
+      return res.status(404).json({ success: false, error: 'Resume not found' });
+    }
+
+    const job = { description: jobDescription };
+    const analysis = await ATSScoringService.calculateATSScore(resume, job);
+
+    res.json({ success: true, analysis });
+  } catch (error) {
+    console.error('Analyze resume error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Tailor resume
+import ResumeVersioningService from '../services/ResumeVersioningService.js';
+export const tailorResume = async (req, res) => {
+  try {
+    const { resumeId, jobDescription } = req.body;
+    const candidateId = req.user.id;
+
+    const resume = await Resume.findOne({ where: { id: resumeId, candidateId } });
+    if (!resume) {
+      return res.status(404).json({ success: false, error: 'Resume not found' });
+    }
+
+    // Creating a mock job to pass to ResumeVersioningService
+    // Ideally we would save the job, but if it's just raw text, we simulate it
+    const mockJob = await Job.create({
+      recruiterId: candidateId, // just filling required fields or use a system user
+      title: 'Target Job',
+      description: jobDescription,
+      status: 'draft'
+    });
+
+    const version = await ResumeVersioningService.createVersion(candidateId, resumeId, mockJob.id, {
+      generateTailored: true,
+      title: `Tailored Version`
+    });
+    
+    // Clean up mock job
+    await mockJob.destroy();
+
+    res.json({ success: true, version });
+  } catch (error) {
+    console.error('Tailor resume error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export { upload };

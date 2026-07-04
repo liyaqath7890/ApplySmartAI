@@ -136,10 +136,10 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatsCard title="Avg. Response Time" value="4 days" icon={Clock} description="estimated" />
-        <StatsCard title="Conversion Rate" value={`${responseRate}%`} icon={Target} description="app → interview" />
+        <StatsCard title="Avg. Response Time" value={`${apiData?.stats?.avgResponseTimeDays ?? 0} days`} icon={Clock} description="estimated" />
+        <StatsCard title="Conversion Rate" value={`${apiData?.stats?.interviewConversionRate ?? 0}%`} icon={Target} description="app → interview" />
         <StatsCard title="Active Pipeline" value={applications.length.toString()} icon={Zap} description="total tracked" />
-        <StatsCard title="Success Rate" value={totalApps > 0 ? `${Math.round((totalOffers / totalApps) * 100)}%` : '0%'} icon={Award} description="app → offer" />
+        <StatsCard title="Success Rate" value={`${apiData?.stats?.offerConversionRate ?? 0}%`} icon={Award} description="app → offer" />
       </div>
     </div>
   );

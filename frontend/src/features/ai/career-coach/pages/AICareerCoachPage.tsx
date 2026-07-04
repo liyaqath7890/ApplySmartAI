@@ -5,6 +5,8 @@ import {
   User,
   Sparkles,
 } from 'lucide-react';
+import { careerTwinService } from '@/api/services/v2/careerTwinService';
+import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
@@ -45,24 +47,22 @@ export default function AICareerCoachPage() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "That's a great question! Based on your profile and career goals, I'd recommend focusing on building your technical skills while also developing your soft skills. Consider taking online courses and working on personal projects.",
-        "I understand your concern. Let me share some insights that might help. First, make sure your resume highlights your achievements with quantifiable metrics. Second, tailor your applications to each specific role.",
-        "Excellent thinking! Career growth often requires a combination of skill development, networking, and strategic job moves. Let's break this down into actionable steps.",
-        "That's a common challenge many professionals face. Here are some strategies that have worked well for others in similar situations...",
-      ];
-
+    try {
+      const { response } = await careerTwinService.chatCopilot(content);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responses[Math.floor(Math.random() * responses.length)],
+        content: response,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      toast.error('Failed to get response from AI coach');
+      setMessages((prev) => prev.filter(m => m.id !== userMessage.id)); // revert
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -24,26 +24,6 @@ export function computeWeeklyApplications(applications: Application[]) {
   return [...counts.slice(1), counts[0]];
 }
 
-export function computeSkillDemand(skills: Skill[]) {
-  const base = skills.slice(0, 5).map((s) => ({
-    skill: s.name,
-    demand: s.proficiency === 'expert' ? 95 : s.proficiency === 'advanced' ? 88 : s.proficiency === 'intermediate' ? 75 : 60,
-    percentage: s.proficiency === 'expert' ? 95 : s.proficiency === 'advanced' ? 88 : s.proficiency === 'intermediate' ? 75 : 60,
-  }));
-
-  if (base.length === 0) {
-    return [
-      { skill: 'React', demand: 'High' as const, percentage: 92 },
-      { skill: 'TypeScript', demand: 'Very High' as const, percentage: 88 },
-      { skill: 'Node.js', demand: 'High' as const, percentage: 75 },
-    ];
-  }
-
-  return base.map((b) => ({
-    ...b,
-    demand: b.percentage >= 90 ? ('Very High' as const) : b.percentage >= 75 ? ('High' as const) : ('Medium' as const),
-  }));
-}
 
 export function getTopMatchedJobs(jobs: ExternalJob[], limit = 5) {
   return [...jobs]

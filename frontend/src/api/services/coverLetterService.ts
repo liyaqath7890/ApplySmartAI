@@ -23,8 +23,8 @@ export const coverLetterService = {
     return response.data;
   },
 
-  generateCoverLetter: async (jobId?: string): Promise<{ coverLetter: CoverLetter }> => {
-    const response = await axios.post('/cover-letters/generate', { jobId });
+  generateCoverLetter: async (data: { jobId?: string; jobData?: { title: string; company: string; description: string }; tone?: string; customPrompt?: string }): Promise<{ coverLetter: CoverLetter }> => {
+    const response = await axios.post('/cover-letters/generate', data);
     return response.data;
   },
 

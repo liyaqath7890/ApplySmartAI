@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { careerProfileService } from '../api/services/careerProfileService';
 import toast from 'react-hot-toast';
 
@@ -122,9 +121,7 @@ const DEFAULT_PERSONAL_INFO: PersonalInfo = {
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────────
-export const useMasterProfileStore = create<MasterProfileState>()(
-  persist(
-    (set, get) => ({
+export const useMasterProfileStore = create<MasterProfileState>()((set, get) => ({
       personalInfo: DEFAULT_PERSONAL_INFO,
       education: [],
       experience: [],
@@ -190,8 +187,8 @@ export const useMasterProfileStore = create<MasterProfileState>()(
             })),
             resumes: profile.resumes ?? [],
           });
-        } catch {
-          // silently fall back to persisted data
+        } catch (error) {
+          console.error('Failed to fetch profile', error);
         } finally {
           set({ isLoading: false });
         }
@@ -421,18 +418,4 @@ export const useMasterProfileStore = create<MasterProfileState>()(
 
       // ── Misc ───────────────────────────────────────────────────────────────
       setLoading: (isLoading) => set({ isLoading }),
-    }),
-    {
-      name: 'master-profile-store',
-      // Don't persist loading state
-      partialize: (s) => ({
-        personalInfo: s.personalInfo,
-        education: s.education,
-        experience: s.experience,
-        certifications: s.certifications,
-        skills: s.skills,
-        resumes: s.resumes,
-      }),
-    }
-  )
-);
+    }));

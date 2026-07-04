@@ -689,6 +689,59 @@ export class JobQueueService {
     return job;
   }
 
+  /**
+   * Dispatch job alerts to all users following a company
+   */
+  async dispatchCompanyJobAlerts(company, jobs) {
+    if (!this.initialized || !this.queues.notifications || !jobs || jobs.length === 0) {
+      return null;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { SavedCompany, CandidateProfile, User } = await import('../routes/models/index.js');
+      
+      const followers = await SavedCompany.findAll({
+        where: { companyId: company.id, isFollowing: true },
+        include: [{ 
+          model: CandidateProfile, 
+          as: 'candidateProfile',
+          include: [{ model: User, as: 'user' }]
+        }]
+      });
+
+      logger.info(`Dispatching company job alert for ${company.name} to ${followers.length} followers`);
+
+      const jobsQueued = [];
+      for (const follower of followers) {
+        if (!follower.candidateProfile || !follower.candidateProfile.user) continue;
+        
+        // Check notification preferences if defined
+        if (follower.notificationPreferences && follower.notificationPreferences.jobAlerts === false) {
+          continue; // User opted out of job alerts for this company
+        }
+
+        const user = follower.candidateProfile.user;
+        const job = await this.queues.notifications.add('send-notification', {
+          userId: user.id,
+          userEmail: user.email,
+          type: 'company_job_alert',
+          data: {
+            company: company.toJSON ? company.toJSON() : company,
+            jobs
+          },
+          timestamp: new Date().toISOString()
+        });
+        jobsQueued.push(job);
+      }
+
+      return jobsQueued;
+    } catch (err) {
+      logger.error(`Failed to dispatch company job alerts: ${err.message}`);
+      return null;
+    }
+  }
+
   // ==================== Email Digest Methods ====================
 
   /**

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import axios from '../api/axios';
-
 export interface Company {
   id: string;
   name: string;
@@ -15,6 +14,8 @@ export interface Company {
   description?: string;
   website?: string;
   isSaved?: boolean;
+  isFollowing?: boolean;
+  isHidden?: boolean;
 }
 
 interface CompaniesState {
@@ -30,15 +31,8 @@ interface CompaniesState {
   setIndustryFilter: (f: string) => void;
 }
 
-const SEED_COMPANIES: Company[] = [
-  { id: '1', name: 'Google', industry: 'Technology', size: '10000+', location: 'Mountain View, CA', rating: 4.6, hiring: 45, freshers: false, remote: true, growth: 'High', description: 'Global technology leader in search, cloud, and AI.' },
-  { id: '2', name: 'Stripe', industry: 'FinTech', size: '5000-10000', location: 'San Francisco, CA', rating: 4.7, hiring: 22, freshers: false, remote: true, growth: 'High' },
-  { id: '3', name: 'Notion', industry: 'Productivity', size: '200-500', location: 'San Francisco, CA', rating: 4.5, hiring: 10, freshers: true, remote: true, growth: 'Very High' },
-  { id: '4', name: 'Databricks', industry: 'Data & AI', size: '5000-10000', location: 'San Francisco, CA', rating: 4.4, hiring: 30, freshers: false, remote: true, growth: 'Very High' },
-];
-
 export const useCompaniesStore = create<CompaniesState>((set, get) => ({
-  companies: SEED_COMPANIES,
+  companies: [],
   isLoading: false,
   searchQuery: '',
   industryFilter: 'All',
@@ -46,28 +40,40 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => ({
   fetchCompanies: async () => {
     set({ isLoading: true });
     try {
-      const response = await axios.get('/company-connectors');
-      const raw: any[] = response.data?.data || [];
-      if (raw.length > 0) {
-        const mapped: Company[] = raw.map((c: any, i: number) => ({
-          id: c.id || String(i + 1),
-          name: c.name || c.companyId || 'Unknown',
+      const [companiesRes, interactionsRes] = await Promise.all([
+        axios.get('/companies'),
+        axios.get('/companies/interactions').catch(() => ({ data: { interactions: [] } }))
+      ]);
+      
+      const interactions = interactionsRes.data?.interactions || [];
+      const interactionMap = new Map();
+      interactions.forEach((i: any) => interactionMap.set(i.companyId, i));
+
+      const raw: any[] = companiesRes.data?.companies || [];
+      const mapped: Company[] = raw.map((c: any) => {
+        const inter = interactionMap.get(c.id) || {};
+        return {
+          id: c.id,
+          name: c.name || 'Unknown',
           industry: c.industry || 'Technology',
-          size: c.size || '100-500',
-          location: c.location || 'Remote',
-          rating: c.rating || 4.0,
-          hiring: c.openPositions || 0,
+          size: c.companySize || '100-500',
+          location: c.headquarters || 'Remote',
+          rating: c.companyRating || 4.0,
+          hiring: c.activeJobs || 0,
           freshers: c.fresherFriendly || false,
-          remote: c.remoteAllowed !== false,
-          growth: c.growth || 'Medium',
+          remote: c.remoteAvailability !== null,
+          growth: 'Medium',
           description: c.description,
-          website: c.websiteUrl,
-        }));
-        set({ companies: mapped });
-      }
-      // If backend returns empty, keep SEED_COMPANIES
-    } catch {
-      // Non-fatal — keep seed data
+          website: c.website,
+          isSaved: inter.isBookmarked || false,
+          isFollowing: inter.isFollowing || false,
+          isHidden: inter.isHidden || false,
+        };
+      });
+      set({ companies: mapped });
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+      set({ companies: [] });
     } finally {
       set({ isLoading: false });
     }
@@ -93,10 +99,10 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => ({
       }
       
       const updatedCompany = get().companies.find(c => c.id === id);
-      if (updatedCompany?.isSaved) {
-        await axios.post(`/company-connectors/${id}/bookmark`);
-      } else {
-        await axios.delete(`/company-connectors/${id}/bookmark`);
+      if (updatedCompany) {
+        await axios.post(`/companies/${id}/interaction`, {
+          isBookmarked: updatedCompany.isSaved
+        });
       }
     } catch (error) {
       // Revert on error

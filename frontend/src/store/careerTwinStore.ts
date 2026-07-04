@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { careerTwinService } from '../api/services/v2/careerTwinService';
+import { roadmapService } from '../api/services/roadmapService';
 
 export interface CareerMilestone {
   id: string;
@@ -41,9 +41,7 @@ interface CareerTwinState {
   clearPlan: () => void;
 }
 
-export const useCareerTwinStore = create<CareerTwinState>()(
-  persist(
-    (set, get) => ({
+export const useCareerTwinStore = create<CareerTwinState>()((set, get) => ({
       plan: null,
       isGenerating: false,
       activeTimeframe: '30',
@@ -52,54 +50,66 @@ export const useCareerTwinStore = create<CareerTwinState>()(
       generatePlan: async (profile) => {
         set({ isGenerating: true, error: null });
         try {
-          // Fetch AI analysis from backend
-          const [weaknessRes, growthRes] = await Promise.all([
-            careerTwinService.analyzeWeaknesses(),
-            careerTwinService.getGrowthRecommendations()
-          ]);
+          // Fetch from backend
+          const [twinRes, roadmapRes] = await Promise.all([
+            careerTwinService.getCareerTwin(),
+            roadmapService.generateRoadmap({
+              targetRole: profile.targetRole || 'Senior Software Engineer',
+              currentRole: profile.currentRole || 'Software Engineer',
+              timelineYears: profile.experience >= 5 ? 1 : 2,
+            })
+          ]).catch(async (e) => {
+            // fallback if doesn't exist
+            return [
+              await careerTwinService.getCareerTwin().catch(() => ({ careerTwin: null })),
+              { roadmap: null }
+            ];
+          });
 
-          const analysis = weaknessRes.analysis as any;
-          const growth = growthRes as any;
+          const twin = (twinRes as any)?.careerTwin;
+          const roadmap = (roadmapRes as any)?.roadmap;
+          
+          if (!twin && !roadmap) throw new Error('No data available');
 
-          // Build plan from real API data
+          const milestonesList = roadmap?.milestones || [];
+          
           const plan: CareerPlan = {
-            targetRole: profile.targetRole || 'Senior Software Engineer',
-            currentRole: profile.currentRole || 'Software Engineer',
-            timeline: profile.experience >= 5 ? '12-18 months' : profile.experience >= 2 ? '8-12 months' : '6-9 months',
-            confidence: growth?.marketPositioning?.score || Math.min(95, 60 + profile.skills.length * 3 + profile.experience * 2),
+            targetRole: roadmap?.targetRole || profile.targetRole || 'Senior Software Engineer',
+            currentRole: roadmap?.currentRole || profile.currentRole || 'Software Engineer',
+            timeline: `${roadmap?.timelineYears || 1} years`,
+            confidence: twin?.confidence || 0,
             salaryRange: { 
-              min: 130000 + profile.experience * 8000, 
-              max: 180000 + profile.experience * 10000 
+              min: twin?.salaryExpectations?.min || 100000, 
+              max: twin?.salaryExpectations?.max || 150000 
             },
-            strengths: analysis?.strengths?.map((s: any) => typeof s === 'string' ? s : s.topic) || 
-              growth?.growthRecommendations?.strengths?.map((s: any) => s.topic) || [],
-            skillGaps: (analysis?.skillGapAnalysis?.gaps || []).map((g: any) => ({
-              name: typeof g === 'string' ? g : g.skill || g.name,
-              priority: (g.priority || 'medium') as 'high' | 'medium' | 'low'
+            strengths: twin?.growthRecommendations || [],
+            skillGaps: (twin?.weaknessAnalysis?.skills || []).map((s: string) => ({
+              name: s,
+              priority: 'high'
             })),
             milestones: {
-              day30: (growth?.growthRecommendations?.areas || []).slice(0, 6).map((area: any, i: number) => ({
-                id: `d30-${i + 1}`,
+              day30: milestonesList.slice(0, 3).map((m: any, i: number) => ({
+                id: m.id,
                 week: i + 1,
-                title: typeof area === 'string' ? area : area.title || area.action,
-                description: typeof area === 'string' ? area : area.description || area.resource || '',
-                category: 'skill' as const,
-                isCompleted: false,
-                dueDate: new Date(Date.now() + (i + 1) * 7 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                title: m.title,
+                description: m.description || '',
+                category: m.milestoneType || 'skill',
+                isCompleted: m.isCompleted,
+                dueDate: m.targetDate || ''
               })),
-              day90: (growth?.growthRecommendations?.actions || []).slice(0, 7).map((action: any, i: number) => ({
-                id: `d90-${i + 1}`,
+              day90: milestonesList.slice(3, 6).map((m: any, i: number) => ({
+                id: m.id,
                 week: 5 + i,
-                title: typeof action === 'string' ? action : action.title || action.action,
-                description: typeof action === 'string' ? action : action.description || action.resource || '',
-                category: 'application' as const,
-                isCompleted: false,
-                dueDate: new Date(Date.now() + (5 + i) * 7 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                title: m.title,
+                description: m.description || '',
+                category: m.milestoneType || 'skill',
+                isCompleted: m.isCompleted,
+                dueDate: m.targetDate || ''
               })),
               day180: [],
               day365: []
             },
-            generatedAt: new Date()
+            generatedAt: new Date(roadmap?.createdAt || Date.now())
           };
 
           set({ plan, isGenerating: false });
@@ -128,10 +138,7 @@ export const useCareerTwinStore = create<CareerTwinState>()(
 
       setActiveTimeframe: (t) => set({ activeTimeframe: t }),
       clearPlan: () => set({ plan: null }),
-    }),
-    { name: 'career-twin-store' }
-  )
-);
+    }));
 
 
 

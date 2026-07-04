@@ -51,57 +51,7 @@ const mapApiResume = (r: Resume): LocalResume => ({
   fileUrl: r.fileUrl,
 });
 
-const generateAnalysis = (jd: string): AnalysisResult => {
-  const tech = ['react','typescript','node','python','aws','docker','kubernetes','sql','graphql','redis','git','agile','rest','api'];
-  const matched = tech.filter(k => jd.toLowerCase().includes(k));
-  const missing = tech.filter(k => !jd.toLowerCase().includes(k)).slice(0, 5);
-  return {
-    atsScore: Math.min(95, 60 + matched.length * 4),
-    keywordMatch: Math.min(100, 50 + matched.length * 5),
-    readabilityScore: 88,
-    recruiterScore: Math.min(95, 65 + matched.length * 3),
-    strengths: ['Clear professional summary','Quantified achievements with metrics','ATS-friendly formatting','Strong action verbs throughout'],
-    improvements: [
-      'Add more role-specific keywords from the job description',
-      'Include measurable outcomes for each position',
-      jd ? 'Tailor your summary to match the target role' : 'Paste a job description for tailored advice',
-    ],
-    missingSkills: missing.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-    matchedKeywords: matched.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-    suggestions: [
-      'Replace "responsible for" with action verbs like "Led", "Architected", "Delivered"',
-      'Add quantified impact: "Reduced load time by 40%" vs "Improved performance"',
-      'Include cloud certifications in a dedicated Certifications section',
-    ],
-  };
-};
 
-const TAILORED_TEMPLATE = `John Doe | john.doe@email.com | +1 (555) 123-4567 | San Francisco, CA
-
-PROFESSIONAL SUMMARY
-Senior Frontend Engineer with 5+ years delivering high-performance React applications at scale.
-Reduced build times by 35%, mentored 4-person teams, and shipped features for millions of users.
-Expert in TypeScript, React, Node.js, and AWS cloud architecture.
-
-TECHNICAL SKILLS
-Frontend: React, TypeScript, Next.js, Redux, Tailwind CSS, GraphQL
-Backend: Node.js, Express, Python, REST APIs, PostgreSQL, Redis
-DevOps: AWS, Docker, Kubernetes, CI/CD, Terraform
-Tools: Git, Jest, Figma, Agile/Scrum
-
-EXPERIENCE
-Senior Frontend Engineer | TechCorp Inc. | Jan 2022–Present
-• Architected 12 major features serving 2M+ daily active users
-• Led 4 engineers, reducing sprint gaps by 35%
-• Cut deployment time from 45 min to 8 min via CI/CD
-• Raised test coverage from 42% to 87%, cutting production bugs by 60%
-
-EDUCATION
-B.S. Computer Science | University of California, Berkeley | 2020
-GPA: 3.8 | Dean's List
-
-CERTIFICATIONS
-AWS Certified Solutions Architect – Associate (2023)`;
 
 export default function ResumeAIPage() {
   const queryClient = useQueryClient();
@@ -143,7 +93,12 @@ export default function ResumeAIPage() {
   const [isRewriting, setIsRewriting] = useState(false);
   const [tailored, setTailored] = useState('');
   const [activeTab, setActiveTab] = useState<'analyze' | 'tailor' | 'versions'>('analyze');
-  const [savedVersions, setSavedVersions] = useState<{ name: string; score: number; date: string; content: string }[]>([]);
+
+  const { data: versionsData, refetch: refetchVersions } = useQuery({
+    queryKey: ['resumeVersions', selected.id],
+    queryFn: () => resumeService.getVersions(selected.id),
+    enabled: selected.id !== 'default' && !selected.id.startsWith('local-'),
+  });
 
   useEffect(() => {
     if (resumesData?.resumes?.length) {
@@ -170,34 +125,76 @@ export default function ResumeAIPage() {
   });
 
   const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-    await new Promise(r => setTimeout(r, 1500));
-    const res = generateAnalysis(jd);
-    setAnalysis(res);
-    setATSScore(res.atsScore);
-    setRewriteSuggestions(res.suggestions);
-    setMissingSkills(res.missingSkills);
-    setIsAnalyzing(false);
-    toast.success('Analysis complete!');
+    if (selected.id === 'default' || selected.id.startsWith('local-')) {
+      toast.error('Please select or upload a valid resume first');
+      return;
+    }
+    if (!jd) {
+      toast.error('Please provide a job description');
+      return;
+    }
+    try {
+      setIsAnalyzing(true);
+      const res = await resumeService.analyzeResume(selected.id, jd);
+      const analysisData = res.analysis || {};
+      
+      const mappedAnalysis: AnalysisResult = {
+        atsScore: analysisData.overallScore || 0,
+        keywordMatch: analysisData.keywordScore || 0,
+        readabilityScore: analysisData.formatScore || 0,
+        recruiterScore: analysisData.sectionScore || 0,
+        strengths: analysisData.details?.matchedKeywords?.map((k: string) => `Matched keyword: ${k}`) || [],
+        improvements: analysisData.details?.formatIssues || [],
+        missingSkills: analysisData.details?.missingKeywords || [],
+        matchedKeywords: analysisData.details?.matchedKeywords || [],
+        suggestions: analysisData.details?.missingSections?.map((s: string) => `Missing section: ${s}`) || [],
+      };
+      
+      setAnalysis(mappedAnalysis);
+      setATSScore(mappedAnalysis.atsScore);
+      setRewriteSuggestions(mappedAnalysis.suggestions);
+      setMissingSkills(mappedAnalysis.missingSkills);
+      toast.success('Analysis complete!');
+    } catch (error) {
+      toast.error('Failed to analyze resume');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleRewrite = async () => {
-    setIsRewriting(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setTailored(TAILORED_TEMPLATE);
-    setActiveTab('tailor');
-    setIsRewriting(false);
-    toast.success('AI-tailored resume generated!');
+    if (selected.id === 'default' || selected.id.startsWith('local-')) {
+      toast.error('Please select or upload a valid resume first');
+      return;
+    }
+    if (!jd) {
+      toast.error('Please provide a job description');
+      return;
+    }
+    try {
+      setIsRewriting(true);
+      const res = await resumeService.tailorResume(selected.id, jd);
+      setTailored(typeof res.version.content === 'string' ? res.version.content : JSON.stringify(res.version.content, null, 2));
+      setActiveTab('tailor');
+      refetchVersions();
+      toast.success('AI-tailored resume generated!');
+    } catch (error) {
+      toast.error('Failed to tailor resume');
+    } finally {
+      setIsRewriting(false);
+    }
   };
 
   const handleSaveVersion = () => {
-    const v = { name: `Tailored — ${new Date().toLocaleDateString()}`, score: analysis?.atsScore ?? 85, date: new Date().toLocaleDateString(), content: tailored };
-    setSavedVersions(p => [v, ...p]);
-    toast.success('Version saved!');
+    // Versions are already saved to the backend by `tailorResume`.
+    // We can just refetch and switch to versions tab.
+    refetchVersions();
+    setActiveTab('versions');
+    toast.success('Version is already saved in the database!');
   };
 
   const handleDownload = (content?: string) => {
-    const text = content ?? tailored ?? TAILORED_TEMPLATE;
+    const text = content ?? tailored;
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -360,17 +357,17 @@ export default function ResumeAIPage() {
               {activeTab === 'versions' && (
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900">Saved Versions</h4>
-                  {savedVersions.length === 0 ? (
+                  {!versionsData?.versions || versionsData.versions.length === 0 ? (
                     <EmptyState icon={FileText} title="No saved versions" description="Generate and save a tailored resume to see versions here" />
-                  ) : savedVersions.map((v, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary-300">
+                  ) : versionsData.versions.map((v: any) => (
+                    <div key={v.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary-300">
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-gray-400" />
-                        <div><p className="font-medium text-gray-900">{v.name}</p><p className="text-xs text-gray-500">{v.date}</p></div>
+                        <div><p className="font-medium text-gray-900">{v.title}</p><p className="text-xs text-gray-500">{new Date(v.createdAt).toLocaleDateString()}</p></div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`text-sm font-bold ${scoreColor(v.score)}`}>{v.score}% ATS</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleDownload(v.content)}><Download className="h-4 w-4" /></Button>
+                        <span className={`text-sm font-bold ${scoreColor(v.atsScore || 0)}`}>{v.atsScore || 0}% ATS</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleDownload(typeof v.content === 'string' ? v.content : JSON.stringify(v.content))}><Download className="h-4 w-4" /></Button>
                       </div>
                     </div>
                   ))}

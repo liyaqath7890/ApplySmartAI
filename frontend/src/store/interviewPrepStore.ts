@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { interviewService, InterviewSession as ApiSession } from '../api/services/interviewService';
 import toast from 'react-hot-toast';
 
@@ -65,42 +64,12 @@ interface InterviewPrepState {
   startSession: (category: string, categoryName: string, questions: InterviewQuestion[]) => void;
   submitAnswer: (answer: string, skipped?: boolean) => void;
   nextQuestion: () => void;
-  endSession: () => InterviewSession | null;
+  endSession: () => Promise<InterviewSession | null>;
   deleteSession: (id: string) => void;
   setLoading: (v: boolean) => void;
 }
 
-const scoreAnswer = (answer: string, question: InterviewQuestion): { score: number; feedback: string } => {
-  if (!answer.trim() || answer.trim().length < 20) {
-    return { score: 30, feedback: 'Answer too brief. Expand with specific examples and details.' };
-  }
-  const len = answer.trim().length;
-  const hasNumbers = /\d+/.test(answer);
-  const hasExamples = /example|for instance|such as|like when|at my|in my/i.test(answer);
-  const hasStructure = /first|second|then|finally|additionally|however|because/i.test(answer);
-
-  let score = 50;
-  if (len > 150) score += 15;
-  if (len > 300) score += 10;
-  if (hasNumbers) score += 10;
-  if (hasExamples) score += 10;
-  if (hasStructure) score += 5;
-
-  score = Math.min(100, score);
-
-  const feedbacks: string[] = [];
-  if (score >= 85) feedbacks.push('Excellent answer with strong detail and structure.');
-  else if (score >= 70) feedbacks.push('Good answer. Add more quantified results for higher impact.');
-  else feedbacks.push('Consider adding specific examples and measurable outcomes.');
-  if (!hasNumbers && question.type === 'behavioral') feedbacks.push('Use numbers to quantify your achievements.');
-  if (!hasStructure) feedbacks.push('Try structuring with STAR method (Situation, Task, Action, Result).');
-
-  return { score, feedback: feedbacks.join(' ') };
-};
-
-export const useInterviewPrepStore = create<InterviewPrepState>()(
-  persist(
-    (set, get) => ({
+export const useInterviewPrepStore = create<InterviewPrepState>()((set, get) => ({
       activeSession: null,
       sessionHistory: [],
       isLoading: false,
@@ -126,12 +95,7 @@ export const useInterviewPrepStore = create<InterviewPrepState>()(
             strengths: [],
             improvements: [],
           }));
-          // Merge with local history (backend wins for same IDs)
-          set((state) => {
-            const existingIds = new Set(mapped.map(s => s.id));
-            const localOnly = state.sessionHistory.filter(s => !existingIds.has(s.id));
-            return { sessionHistory: [...mapped, ...localOnly] };
-          });
+          set({ sessionHistory: mapped });
         } catch (error) {
           console.error('Failed to fetch interview sessions', error);
         } finally {
@@ -187,31 +151,36 @@ export const useInterviewPrepStore = create<InterviewPrepState>()(
         });
       },
 
-      submitAnswer: (answer, skipped = false) => {
+      submitAnswer: async (answer, skipped = false) => {
         const state = get();
         if (!state.activeSession) return;
         const { activeSession } = state;
         const q = activeSession.questions[activeSession.currentIndex];
         const timeSpent = Math.floor((Date.now() - new Date(activeSession.questionStartedAt).getTime()) / 1000);
-        const { score, feedback } = skipped ? { score: 0, feedback: 'Skipped' } : scoreAnswer(answer, q);
-
-        const sessionAnswer: SessionAnswer = {
-          questionId: q.id,
-          question: q.question,
-          answer: skipped ? '' : answer,
-          timeSpent,
-          skipped,
-          score,
-          feedback,
-        };
-
-        set({
-          activeSession: {
-            ...activeSession,
-            answers: [...activeSession.answers, sessionAnswer],
-            questionStartedAt: new Date(),
-          },
-        });
+        
+        try {
+          const response = await interviewService.submitAnswer(activeSession.sessionId, q.id, answer);
+          
+          const sessionAnswer: SessionAnswer = {
+            questionId: q.id,
+            question: q.question,
+            answer: skipped ? '' : answer,
+            timeSpent,
+            skipped,
+            score: response.feedback?.score || 0,
+            feedback: response.feedback?.feedback || 'Skipped',
+          };
+  
+          set({
+            activeSession: {
+              ...activeSession,
+              answers: [...activeSession.answers, sessionAnswer],
+              questionStartedAt: new Date(),
+            },
+          });
+        } catch (error) {
+          toast.error('Failed to submit answer');
+        }
       },
 
       nextQuestion: () => {
@@ -226,54 +195,41 @@ export const useInterviewPrepStore = create<InterviewPrepState>()(
         });
       },
 
-      endSession: () => {
+      endSession: async () => {
         const { activeSession, sessionHistory } = get();
         if (!activeSession) return null;
 
-        const answeredAnswers = activeSession.answers.filter(a => !a.skipped && a.answer);
-        const scores = answeredAnswers.map(a => a.score || 0);
-        const overallScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+        try {
+          set({ isLoading: true });
+          const { session } = await interviewService.getSession(activeSession.sessionId);
+          
+          const mappedSession: InterviewSession = {
+            id: session.id,
+            category: session.interviewType || 'general',
+            categoryName: session.interviewType || 'General',
+            startedAt: session.startTime ? new Date(session.startTime) : new Date(session.createdAt),
+            completedAt: session.endTime ? new Date(session.endTime) : new Date(),
+            duration: 0,
+            answers: [], // Not needed for history list
+            overallScore: session.overallScore || 0,
+            communicationScore: session.overallScore || 0, // Fallback, backend can compute this later
+            technicalScore: session.overallScore || 0, // Fallback
+            totalQuestions: session.totalQuestions || 0,
+            answeredQuestions: session.currentQuestionIndex || 0,
+            skippedQuestions: 0,
+            strengths: session.feedback?.strengths || [],
+            improvements: session.feedback?.improvements || [],
+          };
 
-        const technicalAnswers = activeSession.answers.filter((a, i) => {
-          const q = activeSession.questions[i];
-          return q && (q.type === 'technical' || q.type === 'system_design') && !a.skipped;
-        });
-        const technicalScore = technicalAnswers.length > 0
-          ? Math.round(technicalAnswers.reduce((a, b) => a + (b.score || 0), 0) / technicalAnswers.length)
-          : overallScore;
-        const communicationScore = Math.min(100, overallScore + Math.floor(Math.random() * 10) - 5);
-
-        const strengths: string[] = [];
-        const improvements: string[] = [];
-        if (overallScore >= 75) strengths.push('Strong technical explanations');
-        if (answeredAnswers.some(a => /\d+/.test(a.answer))) strengths.push('Used quantified metrics effectively');
-        if (answeredAnswers.some(a => a.answer.length > 300)) strengths.push('Provided detailed, thorough answers');
-        if (activeSession.answers.filter(a => a.skipped).length === 0) strengths.push('Answered all questions without skipping');
-        if (overallScore < 75) improvements.push('Add more specific examples from your experience');
-        if (!answeredAnswers.some(a => /\d+/.test(a.answer))) improvements.push('Quantify achievements with numbers and percentages');
-        if (activeSession.answers.filter(a => a.skipped).length > 2) improvements.push('Practice answering more question types');
-        improvements.push('Use STAR method for behavioral questions');
-
-        const session: InterviewSession = {
-          id: activeSession.sessionId,
-          category: activeSession.category,
-          categoryName: activeSession.categoryName,
-          startedAt: activeSession.startedAt,
-          completedAt: new Date(),
-          duration: Math.floor((Date.now() - new Date(activeSession.startedAt).getTime()) / 1000),
-          answers: activeSession.answers,
-          overallScore,
-          communicationScore,
-          technicalScore,
-          totalQuestions: activeSession.questions.length,
-          answeredQuestions: answeredAnswers.length,
-          skippedQuestions: activeSession.answers.filter(a => a.skipped).length,
-          strengths: strengths.slice(0, 3),
-          improvements: improvements.slice(0, 3),
-        };
-
-        set({ activeSession: null, sessionHistory: [session, ...sessionHistory] });
-        return session;
+          set({ activeSession: null, sessionHistory: [mappedSession, ...sessionHistory] });
+          return mappedSession;
+        } catch (error) {
+          console.error('Failed to end session', error);
+          set({ activeSession: null });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       deleteSession: (id) => set(state => ({
@@ -281,7 +237,4 @@ export const useInterviewPrepStore = create<InterviewPrepState>()(
       })),
 
       setLoading: (isLoading) => set({ isLoading }),
-    }),
-    { name: 'interview-prep-store' }
-  )
-);
+    }));

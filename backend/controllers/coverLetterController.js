@@ -45,6 +45,8 @@ export const generateCoverLetter = async (req, res) => {
       if (!job) {
         job = await Job.findByPk(jobId);
       }
+    } else if (req.body.jobData) {
+      job = req.body.jobData; // arbitrary job info like { title, company, description }
     }
 
     // Generate cover letter content using the Service
@@ -55,7 +57,7 @@ export const generateCoverLetter = async (req, res) => {
     // Create cover letter
     const letter = await CoverLetter.create({
       candidateId,
-      jobId: job?.id,
+      jobId: jobId || null,
       title: job ? `Cover Letter for ${job.company} - ${job.title}` : 'General Cover Letter',
       content: letterContent,
       aiGenerated: true,

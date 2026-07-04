@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   CheckCircle,
@@ -18,32 +18,57 @@ import {
 import Button from '@/shared/components/ui/Button';
 import Badge from '@/shared/components/ui/Badge';
 import { PageHeader } from '@/shared/components/ui';
-import { useNavigate } from 'react-router-dom';
+import { useExternalJobStore, useMasterProfileStore } from '@/store';
 
 export default function ReviewBeforeApplyPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
 
-  // Mock data (will be replaced with API later)
-  const jobData = {
-    title: 'Senior Full Stack Developer',
-    company: 'Tech Corp',
-    location: 'San Francisco, CA (Remote)',
-    salary: '$150k - $200k',
-    type: 'Full-time',
-    description: 'We are looking for an experienced full stack developer to join our team...',
-    requirements: ['React', 'Node.js', 'PostgreSQL', 'AWS', 'Docker'],
-  };
+  const { jobs } = useExternalJobStore();
+  const { skills } = useMasterProfileStore();
 
-  const matchData = {
-    score: 87,
-    matchingSkills: ['React', 'Node.js', 'PostgreSQL'],
-    missingSkills: ['AWS', 'Docker'],
-    experienceMatch: 'Excellent',
-    educationMatch: 'Good',
-    explanation:
-      'Your profile is a strong match for this role! You have all the core technical skills, and you should focus on highlighting your React and Node.js experience in your resume and cover letter.',
-  };
+  const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobs, jobId]);
+
+  const userSkillsLower = useMemo(() => skills.map((s) => s.name.toLowerCase()), [skills]);
+
+  const jobData = useMemo(() => {
+    if (!job) return null;
+    return {
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      salary: job.salary,
+      type: job.jobType || job.locationType,
+      description: job.description,
+      requirements: job.skills || [],
+    };
+  }, [job]);
+
+  const matchData = useMemo(() => {
+    if (!job) return null;
+    const matchingSkills = job.skills?.filter((s) => userSkillsLower.includes(s.toLowerCase())) || [];
+    const missingSkills = job.missingSkills || [];
+    
+    return {
+      score: job.matchScore || 0,
+      matchingSkills,
+      missingSkills,
+      experienceMatch: (job.matchScore || 0) >= 70 ? 'Good' : 'Needs Review',
+      educationMatch: 'Good',
+      explanation:
+        'Your profile has been analyzed against the job requirements. Review your matching and missing skills to tailor your application accordingly.',
+    };
+  }, [job, userSkillsLower]);
+
+  if (!jobData || !matchData) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Job not found. <Button onClick={() => navigate(-1)} variant="ghost">Go Back</Button>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="space-y-6">

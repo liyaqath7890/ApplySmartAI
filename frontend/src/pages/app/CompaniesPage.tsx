@@ -23,6 +23,9 @@ export default function CompaniesPage() {
     <div className="space-y-6">
       <PageHeader title="Company Intelligence" subtitle="Discover companies that match your career goals" icon={Building2}>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => window.location.href = '/app/companies/saved'} className="mr-2">
+            <Bookmark className="h-4 w-4 mr-2" /> Saved
+          </Button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input type="text" placeholder="Search companies..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm" />
@@ -62,7 +65,7 @@ export default function CompaniesPage() {
                 {company.remote && <Badge variant="info">Remote</Badge>}
                 <Badge variant="warning">{company.growth} Growth</Badge>
               </div>
-              <Button variant="outline" className="w-full" onClick={() => setSelected(company)}>View Details</Button>
+              <Button variant="outline" className="w-full" onClick={() => window.location.href = `/app/companies/${company.id}`}>View Details</Button>
             </div>
           ))}
         </div>

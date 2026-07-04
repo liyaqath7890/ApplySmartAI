@@ -1,11 +1,11 @@
-import { BaseJobProvider } from './BaseProvider.js';
+import { BaseATSProvider } from './BaseATSProvider.js';
 
 /**
  * Greenhouse Career Page Adapter
  * Scrapes jobs from company career pages powered by Greenhouse
  * Documentation: https://developers.greenhouse.io/harvest.html
  */
-export class GreenhouseProvider extends BaseJobProvider {
+export class GreenhouseProvider extends BaseATSProvider {
   constructor(adapterConfig = {}) {
     super(adapterConfig);
     this.apiKey = adapterConfig.apiKey || process.env.GREENHOUSE_API_KEY;
@@ -71,9 +71,17 @@ export class GreenhouseProvider extends BaseJobProvider {
   }
 
   /**
-   * Fetch jobs from a specific company's Greenhouse board
+   * Fetch jobs for a Company model instance (DB-driven, implements BaseATSProvider interface)
    */
-  async fetchCompanyJobs(companyId, searchParams = {}) {
+  async fetchCompanyJobs(company, options = {}) {
+    const companyId = company.externalCompanyId || company.name?.toLowerCase().replace(/\s+/g, '-');
+    return this._fetchByBoardId(companyId);
+  }
+
+  /**
+   * Legacy: Fetch jobs from a specific company's Greenhouse board by board ID string
+   */
+  async _fetchByBoardId(companyId, searchParams = {}) {
     try {
       const url = `${this.baseUrl}/boards/${companyId}/jobs`;
       const params = { content: true };

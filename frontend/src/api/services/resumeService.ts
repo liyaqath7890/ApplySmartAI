@@ -78,4 +78,14 @@ export const resumeService = {
   deleteResume: async (resumeId: string): Promise<void> => {
     await axios.delete(`/resumes/${resumeId}`);
   },
+
+  analyzeResume: async (resumeId: string, jobDescription: string): Promise<{ analysis: any }> => {
+    const response = await axios.post('/resumes/analyze', { resumeId, jobDescription });
+    return response.data;
+  },
+
+  tailorResume: async (resumeId: string, jobDescription: string): Promise<{ version: ResumeVersion }> => {
+    const response = await axios.post('/resumes/tailor', { resumeId, jobDescription });
+    return response.data;
+  },
 };
