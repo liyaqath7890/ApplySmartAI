@@ -19,14 +19,58 @@
 import { GreenhouseProvider } from './jobAggregation/providers/GreenhouseProvider.js';
 import { LeverProvider }      from './jobAggregation/providers/LeverProvider.js';
 import { AshbyProvider }      from './jobAggregation/providers/AshbyProvider.js';
+import { TeamtailorProvider }  from './jobAggregation/providers/TeamtailorProvider.js';
+import { SmartRecruitersProvider } from './jobAggregation/providers/SmartRecruitersProvider.js';
+import { WorkdayProvider } from './jobAggregation/providers/WorkdayProvider.js';
+import { OracleProvider } from './jobAggregation/providers/OracleProvider.js';
+import { SAPSuccessFactorsProvider } from './jobAggregation/providers/SAPSuccessFactorsProvider.js';
+import { DarwinboxProvider } from './jobAggregation/providers/DarwinboxProvider.js';
+import { iCIMSProvider } from './jobAggregation/providers/iCIMSProvider.js';
+import { TaleoProvider } from './jobAggregation/providers/TaleoProvider.js';
+import { WorkableProvider } from './jobAggregation/providers/WorkableProvider.js';
+import { RecruiteeProvider } from './jobAggregation/providers/RecruiteeProvider.js';
+import { BambooHRProvider } from './jobAggregation/providers/BambooHRProvider.js';
+import { JobviteProvider } from './jobAggregation/providers/JobviteProvider.js';
+import { JazzHRProvider } from './jobAggregation/providers/JazzHRProvider.js';
+import { PersonioProvider } from './jobAggregation/providers/PersonioProvider.js';
+import { BreezyHRProvider } from './jobAggregation/providers/BreezyHRProvider.js';
+import { FountainProvider } from './jobAggregation/providers/FountainProvider.js';
+import { PinpointProvider } from './jobAggregation/providers/PinpointProvider.js';
+import { ComeetProvider } from './jobAggregation/providers/ComeetProvider.js';
+import { ZohoRecruitProvider } from './jobAggregation/providers/ZohoRecruitProvider.js';
+import { RipplingProvider } from './jobAggregation/providers/RipplingProvider.js';
 import jobQueueService        from './JobQueueService.js';
+import jobAggregationService  from './jobAggregation/JobAggregationService.js';
 import logger                 from '../utils/logger.js';
+import LockService            from '../utils/LockService.js';
+import auditLogger            from '../utils/auditLogger.js';
+import sequelize              from '../config/database.js';
 
 // ── Built-in provider instances ────────────────────────────────────────────────
 const BUILTIN_PROVIDERS = {
   greenhouse: new GreenhouseProvider({}),
   lever:      new LeverProvider({}),
   ashby:      new AshbyProvider({}),
+  teamtailor: new TeamtailorProvider({}),
+  smartrecruiters: new SmartRecruitersProvider({}),
+  workday: new WorkdayProvider({}),
+  oracle: new OracleProvider({}),
+  sap: new SAPSuccessFactorsProvider({}),
+  darwinbox: new DarwinboxProvider({}),
+  icims: new iCIMSProvider({}),
+  taleo: new TaleoProvider({}),
+  workable: new WorkableProvider({}),
+  recruitee: new RecruiteeProvider({}),
+  bamboohr: new BambooHRProvider({}),
+  jobvite: new JobviteProvider({}),
+  jazzhr: new JazzHRProvider({}),
+  personio: new PersonioProvider({}),
+  breezyhr: new BreezyHRProvider({}),
+  fountain: new FountainProvider({}),
+  pinpoint: new PinpointProvider({}),
+  comeet: new ComeetProvider({}),
+  zohorecruit: new ZohoRecruitProvider({}),
+  rippling: new RipplingProvider({})
 };
 
 export class CompanyConnectorService {
@@ -123,6 +167,11 @@ export class CompanyConnectorService {
         try { return provider.normalizeJob(j); } catch { return null; }
       }).filter(Boolean);
 
+      // Save jobs into database
+      if (jobs.length > 0) {
+        await jobAggregationService.saveJobs(jobs, null);
+      }
+
       // Update cache
       this.cache.set(cacheKey, { jobs, fetchedAt: Date.now() });
 
@@ -180,30 +229,65 @@ export class CompanyConnectorService {
    * Called by SchedulerService.
    */
   async syncDueCompanies() {
-    const { Company } = await import('../routes/models/index.js');
-    const now = Date.now();
-    const companies = await Company.findAll({ where: { activeStatus: true, schedulerStatus: ['idle', 'failed'] } });
-
-    const results = [];
-    for (const company of companies) {
-      const syncIntervalMs = this._syncFrequencyToMs(company.syncFrequency);
-      const lastSync = company.lastSyncTime ? new Date(company.lastSyncTime).getTime() : 0;
-      if (now - lastSync < syncIntervalMs) continue; // Not due yet
-
-      try {
-        const jobs = await this.fetchCompanyJobs(company.id, { forceRefresh: true });
-        
-        // Dispatch job alerts if there are new jobs found
-        if (jobs && jobs.length > 0) {
-          await jobQueueService.dispatchCompanyJobAlerts(company, jobs);
-        }
-
-        results.push({ companyId: company.id, name: company.name, jobCount: jobs.length, status: 'success' });
-      } catch (err) {
-        results.push({ companyId: company.id, name: company.name, error: err.message, status: 'failed' });
-      }
+    // 1. Acquire distributed system lock to prevent concurrent overlaps
+    const lockAcquired = await LockService.acquire('sync_due_companies', 1800000); // 30 min lock max
+    if (!lockAcquired) {
+      logger.warn('[CompanyConnectorService] syncDueCompanies skipped: Could not acquire lock.');
+      return [];
     }
-    return results;
+
+    auditLogger.log('SYNC_START', null, { message: 'Initiated scheduler-due company synchronization' });
+
+    try {
+      const { Company } = await import('../routes/models/index.js');
+      const now = Date.now();
+      const companies = await Company.findAll({ where: { activeStatus: true, schedulerStatus: ['idle', 'failed'] } });
+
+      const results = [];
+      for (const company of companies) {
+        const syncIntervalMs = this._syncFrequencyToMs(company.syncFrequency);
+        const lastSync = company.lastSyncTime ? new Date(company.lastSyncTime).getTime() : 0;
+        if (now - lastSync < syncIntervalMs) continue; // Not due yet
+
+        // Use transaction to ensure safe updates to database records
+        const t = await sequelize.transaction();
+        try {
+          auditLogger.log('COMPANY_SYNC_START', null, { companyId: company.id, name: company.name });
+          
+          const jobs = await this.fetchCompanyJobs(company.id, { forceRefresh: true });
+          
+          if (jobs && jobs.length > 0) {
+            await jobQueueService.dispatchCompanyJobAlerts(company, jobs);
+          }
+
+          await company.update({
+            lastSyncTime: new Date(),
+            schedulerStatus: 'idle',
+            syncStatus: 'healthy'
+          }, { transaction: t });
+
+          await t.commit();
+          results.push({ companyId: company.id, name: company.name, jobCount: jobs.length, status: 'success' });
+          auditLogger.log('COMPANY_SYNC_SUCCESS', null, { companyId: company.id, name: company.name, jobCount: jobs.length });
+        } catch (err) {
+          await t.rollback();
+          results.push({ companyId: company.id, name: company.name, error: err.message, status: 'failed' });
+          auditLogger.log('COMPANY_SYNC_FAILED', null, { companyId: company.id, name: company.name, error: err.message });
+          
+          // Update status to failed
+          await company.update({
+            schedulerStatus: 'failed',
+            syncStatus: 'degraded'
+          }).catch(() => {});
+        }
+      }
+
+      auditLogger.log('SYNC_COMPLETE', null, { successCount: results.filter(r => r.status === 'success').length });
+      return results;
+    } finally {
+      // 2. Always release the lock
+      await LockService.release('sync_due_companies');
+    }
   }
 
   /**

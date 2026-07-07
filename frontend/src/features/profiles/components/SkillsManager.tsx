@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
 import { Button, EmptyState } from '@/shared/components/ui';
@@ -49,9 +49,9 @@ export const SkillsManager: React.FC<SkillsManagerProps> = ({}) => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-app-primary flex items-center gap-2">
           Skills
         </h2>
         <Button onClick={() => setIsAdding(!isAdding)} className="flex items-center gap-2">
@@ -61,30 +61,30 @@ export const SkillsManager: React.FC<SkillsManagerProps> = ({}) => {
       </div>
 
       {isAdding && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-6 p-4 bg-app-hover rounded-lg border border-app-border">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Skill Name</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Skill Name</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-app-bg text-app-primary"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Category</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-app-bg text-app-primary"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Proficiency</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Proficiency</label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-app-bg text-app-primary"
                 value={formData.proficiency}
                 onChange={(e) => setFormData({ ...formData, proficiency: e.target.value as any })}
               >
@@ -95,12 +95,12 @@ export const SkillsManager: React.FC<SkillsManagerProps> = ({}) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years Experience</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Years Experience</label>
               <input
                 type="number"
                 min="0"
                 max="50"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-app-bg text-app-primary"
                 value={formData.yearsOfExperience}
                 onChange={(e) => setFormData({ ...formData, yearsOfExperience: Number(e.target.value) })}
               />
@@ -162,4 +162,5 @@ export const SkillsManager: React.FC<SkillsManagerProps> = ({}) => {
     </div>
   );
 };
+
 

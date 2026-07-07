@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,6 +8,14 @@ export default {
   theme: {
     extend: {
       colors: {
+        app: {
+          bg: 'var(--bg-app-bg)',
+          card: 'var(--bg-app-card)',
+          border: 'var(--border-app-border)',
+          primary: 'var(--text-app-primary)',
+          secondary: 'var(--text-app-secondary)',
+          hover: 'var(--bg-app-hover)',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

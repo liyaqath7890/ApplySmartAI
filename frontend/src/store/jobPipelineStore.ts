@@ -10,6 +10,7 @@ export interface Application {
   jobId?: string;
   candidateId?: string;
   status: PipelineStatus;
+  matchScore?: number;
   jobTitle: string;
   companyName: string;
   logoUrl?: string;
@@ -18,6 +19,8 @@ export interface Application {
   skills?: string[];
   notes?: string;
   appliedDate: Date;
+  followUpDate?: Date;
+  recruiter?: string;
   lastUpdated?: Date;
   source?: string;
   jobUrl?: string;
@@ -33,7 +36,18 @@ interface JobPipelineState {
   fetchPipeline: () => Promise<void>;
   setApplications: (applications: Application[]) => void;
   updateApplicationStage: (id: string, stage: PipelineStatus) => Promise<void>;
-  updateApplicationNotes: (id: string, notes: string) => void;
+  updateApplicationNotes: (id: string, notes: string) => Promise<void>;
+  updateTrackingDetails: (
+    id: string,
+    details: {
+      appliedAt?: string;
+      followUpDate?: string;
+      notes?: string;
+      recruiter?: string;
+      salary?: string;
+      documentsUsed?: any;
+    }
+  ) => Promise<void>;
   addApplication: (application: Application) => Promise<void>;
   deleteApplication: (id: string) => void;
   setLoading: (loading: boolean) => void;
@@ -52,7 +66,6 @@ export const useJobPipelineStore = create<JobPipelineState>((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await applicationService.getPipeline();
-      // Flatten the bucketed pipeline into a flat array with jobTitle/companyName fields
       const all: Application[] = [];
       for (const [, items] of Object.entries(data)) {
         for (const item of items as PipelineItem[]) {
@@ -62,6 +75,11 @@ export const useJobPipelineStore = create<JobPipelineState>((set, get) => ({
             jobTitle: item.title,
             companyName: item.company,
             jobUrl: item.jobUrl,
+            matchScore: item.matchScore,
+            notes: item.documentsUsed?.notes || '',
+            recruiter: item.recruiter || '',
+            salary: item.salary || '',
+            followUpDate: item.followUpDate ? new Date(item.followUpDate) : undefined,
             appliedDate: new Date(item.appliedAt),
           });
         }
@@ -69,7 +87,6 @@ export const useJobPipelineStore = create<JobPipelineState>((set, get) => ({
       set({ applications: all });
     } catch (error) {
       console.error('Failed to fetch pipeline', error);
-      // Silently fail — show empty kanban
     } finally {
       set({ isLoading: false });
     }
@@ -88,26 +105,50 @@ export const useJobPipelineStore = create<JobPipelineState>((set, get) => ({
       await applicationService.updateStatus(id, stage);
     } catch (error) {
       toast.error('Failed to update status');
-      // Revert on failure by refetching
       get().fetchPipeline();
     }
   },
 
-  updateApplicationNotes: (id, notes) => set((state) => ({
-    applications: state.applications.map(a => a.id === id ? { ...a, notes } : a),
-  })),
+  updateApplicationNotes: async (id, notes) => {
+    set((state) => ({
+      applications: state.applications.map(a => a.id === id ? { ...a, notes } : a),
+    }));
+    try {
+      await applicationService.updateTrackingDetails(id, { notes });
+    } catch (error) {
+      console.warn('Failed to sync notes on backend', error);
+    }
+  },
+
+  updateTrackingDetails: async (id, details) => {
+    set((state) => ({
+      applications: state.applications.map(a =>
+        a.id === id
+          ? {
+              ...a,
+              ...(details.notes !== undefined ? { notes: details.notes } : {}),
+              ...(details.recruiter !== undefined ? { recruiter: details.recruiter } : {}),
+              ...(details.salary !== undefined ? { salary: details.salary } : {}),
+              ...(details.followUpDate !== undefined ? { followUpDate: details.followUpDate ? new Date(details.followUpDate) : undefined } : {})
+            }
+          : a
+      )
+    }));
+    try {
+      await applicationService.updateTrackingDetails(id, details);
+    } catch (error) {
+      toast.error('Failed to sync tracking details');
+    }
+  },
 
   addApplication: async (application) => {
-    // Optimistic add
     const alreadyExists = get().applications.some(a => a.id === application.id);
     if (!alreadyExists) {
       set((state) => ({ applications: [...state.applications, application] }));
     }
     try {
-      // Save to backend if we have an externalJobId encoded in the jobId field
       await applicationService.saveJob({ externalJobId: application.jobId });
     } catch (error) {
-      // Non-fatal — job may already be saved or backend may be unavailable
       console.warn('Could not persist application to backend:', error);
     }
   },

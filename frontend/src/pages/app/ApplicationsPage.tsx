@@ -60,17 +60,17 @@ function SortableApplication({ application, onStatusChange }: SortableApplicatio
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white p-4 rounded-lg border border-gray-200 cursor-grab active:cursor-grabbing hover:border-primary-300 transition-colors"
+      className="bg-app-card p-4 rounded-xl border border-app-border cursor-grab active:cursor-grabbing hover:border-blue-500/50 hover:bg-app-hover transition duration-200"
     >
       <div className="flex items-start gap-3">
-        <GripVertical className="h-5 w-5 text-gray-400 mt-0.5" {...attributes} {...listeners} />
-        <div className="flex-1">
-          <h4 className="font-medium text-gray-900">{application.jobId ? 'Job' : 'External Job'}</h4>
-          <p className="text-sm text-gray-600">{application.status}</p>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-500">{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : 'N/A'}</span>
+        <GripVertical className="h-5 w-5 text-app-secondary mt-0.5" {...attributes} {...listeners} />
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-app-primary text-sm truncate">{application.jobId ? 'Job Application' : 'External Referral'}</h4>
+          <p className="text-xs text-app-secondary mt-0.5 uppercase tracking-wider">{application.status}</p>
+          <div className="flex items-center justify-between mt-3 text-xs">
+            <span className="text-app-secondary">{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : 'N/A'}</span>
             {application.matchScore && (
-              <span className="text-xs font-medium text-emerald-600">{application.matchScore}% Match</span>
+              <span className="font-semibold text-emerald-400">{application.matchScore}% Match</span>
             )}
           </div>
         </div>
@@ -86,13 +86,12 @@ interface Column {
 }
 
 const statusColumns: Column[] = [
-  { key: 'saved', title: 'Saved', color: 'bg-gray-100 text-gray-700' },
-  { key: 'applied', title: 'Applied', color: 'bg-blue-100 text-blue-700' },
-  { key: 'interview', title: 'Interview', color: 'bg-amber-100 text-amber-700' },
-  { key: 'offer', title: 'Offer', color: 'bg-emerald-100 text-emerald-700' },
-  { key: 'accepted', title: 'Accepted', color: 'bg-emerald-100 text-emerald-700' },
-  { key: 'rejected', title: 'Rejected', color: 'bg-red-100 text-red-700' },
-  { key: 'withdrawn', title: 'Withdrawn', color: 'bg-gray-100 text-gray-700' },
+  { key: 'imported', title: 'Imported', color: 'bg-slate-800 text-slate-300 border-slate-700/50' },
+  { key: 'applied', title: 'Applied', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  { key: 'interview_scheduled', title: 'Interview', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  { key: 'offer', title: 'Offer', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  { key: 'rejected', title: 'Rejected', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  { key: 'withdrawn', title: 'Withdrawn', color: 'bg-slate-800 text-slate-350 border-slate-700/50' },
 ];
 
 export default function ApplicationsPage() {
@@ -110,7 +109,7 @@ export default function ApplicationsPage() {
       applicationService.moveApplication(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast.success('Application updated!');
+      toast.success('Application status updated!');
     },
     onError: () => {
       toast.error('Failed to update application');
@@ -140,17 +139,18 @@ export default function ApplicationsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Application Tracker"
-        subtitle="Track all your job applications in one place"
-        icon={CheckSquare}
-      >
+    <div className="space-y-6 animate-fade-in p-6 bg-app-bg text-app-primary min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-app-border pb-4 gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            Application Pipeline
+          </h1>
+          <p className="text-sm text-app-secondary mt-1">Track and manage your live application lifecycles.</p>
+        </div>
         <div className="flex gap-2">
           <Button
             variant={viewMode === 'kanban' ? 'primary' : 'outline'}
             size="sm"
-            icon={CheckSquare}
             onClick={() => setViewMode('kanban')}
           >
             Kanban
@@ -158,7 +158,6 @@ export default function ApplicationsPage() {
           <Button
             variant={viewMode === 'table' ? 'primary' : 'outline'}
             size="sm"
-            icon={List}
             onClick={() => setViewMode('table')}
           >
             Table
@@ -166,21 +165,20 @@ export default function ApplicationsPage() {
           <Button
             variant={viewMode === 'timeline' ? 'primary' : 'outline'}
             size="sm"
-            icon={Calendar}
             onClick={() => setViewMode('timeline')}
           >
             Timeline
           </Button>
         </div>
-      </PageHeader>
+      </div>
 
       {/* Loading */}
       {isLoading && <LoadingState message="Loading applications..." />}
 
       {/* Error */}
       {error && (
-        <div className="p-6 bg-red-50 rounded-xl border border-red-200 text-red-800">
-          Error loading applications
+        <div className="p-6 bg-red-500/10 rounded-xl border border-red-500/20 text-red-400">
+          Error loading applications. Check server connection.
         </div>
       )}
 
@@ -193,32 +191,29 @@ export default function ApplicationsPage() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 overflow-x-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4 overflow-x-auto pb-4">
                 {statusColumns.map((column) => {
                   const columnApps = getApplicationsByStatus(column.key);
                   return (
-                    <div key={column.key} className="min-w-[280px]">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{column.title}</h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${column.color}`}>
-                              {columnApps.length}
-                            </span>
-                          </div>
-                        </div>
+                    <div key={column.key} className="min-w-[260px] space-y-3">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-sm font-bold text-app-primary">{column.title}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${column.color}`}>
+                          {columnApps.length}
+                        </span>
                       </div>
+                      
                       <SortableContext
                         items={columnApps.map((app) => `${app.id}:${column.key}`)}
                         strategy={verticalListSortingStrategy}
                       >
-                        <div className="bg-gray-50 rounded-xl p-4 space-y-3 min-h-[400px]">
+                        <div className="bg-app-card border border-app-border rounded-2xl p-3 space-y-3 min-h-[450px] transition-all">
                           {columnApps.map((app) => (
                             <SortableApplication key={app.id} application={app} />
                           ))}
                           {columnApps.length === 0 && (
-                            <div className="text-center py-8 text-gray-500 text-sm">
-                              No applications
+                            <div className="text-center py-12 text-app-secondary text-xs">
+                              Empty column
                             </div>
                           )}
                         </div>
@@ -232,34 +227,34 @@ export default function ApplicationsPage() {
 
           {/* Table View */}
           {viewMode === 'table' && (
-            <div className="bg-white rounded-xl border border-gray-200">
+            <div className="glass-card overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm text-left">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left font-medium text-gray-500 p-4">Job</th>
-                      <th className="text-left font-medium text-gray-500 p-4">Status</th>
-                      <th className="text-left font-medium text-gray-500 p-4">Match</th>
-                      <th className="text-left font-medium text-gray-500 p-4">Applied</th>
+                    <tr className="border-b border-app-border text-app-secondary font-semibold">
+                      <th className="p-4">Job Info</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Match %</th>
+                      <th className="p-4">Applied Date</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-app-border text-app-primary">
                     {data?.applications?.map((app) => {
                       const column = statusColumns.find((c) => c.key === app.status);
                       return (
-                        <tr key={app.id} className="border-b border-gray-100">
-                          <td className="p-4 font-medium text-gray-900">
-                            {app.jobId ? 'Job' : 'External Job'}
+                        <tr key={app.id} className="hover:bg-app-hover transition-colors">
+                          <td className="p-4 font-semibold text-app-primary">
+                            {app.jobId ? 'Job Application' : 'External Referral'}
                           </td>
                           <td className="p-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${column?.color}`}>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${column?.color}`}>
                               {app.status}
                             </span>
                           </td>
-                          <td className="p-4 text-gray-700">
+                          <td className="p-4 font-medium text-app-secondary">
                             {app.matchScore ? `${app.matchScore}%` : 'N/A'}
                           </td>
-                          <td className="p-4 text-gray-500">
+                          <td className="p-4 text-app-secondary">
                             {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'N/A'}
                           </td>
                         </tr>
@@ -273,7 +268,7 @@ export default function ApplicationsPage() {
 
           {/* Timeline View */}
           {viewMode === 'timeline' && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="glass-card p-6">
               {data?.applications?.length === 0 ? (
                 <EmptyState
                   icon={Briefcase}
@@ -281,17 +276,16 @@ export default function ApplicationsPage() {
                   description="Start applying to jobs to track them here."
                 />
               ) : (
-                <div className="space-y-8">
-                  {data?.applications.map((app, index) => (
+                <div className="space-y-8 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-app-border">
+                  {data?.applications.map((app) => (
                     <div key={app.id} className="relative pl-8">
-                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                      <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-primary-600 border-4 border-white"></div>
-                      <div className="pb-8">
-                        <h4 className="font-medium text-gray-900">
-                          {app.jobId ? 'Job' : 'External Job'}
+                      <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-blue-500 border-4 border-app-bg ring-2 ring-blue-500/20"></div>
+                      <div>
+                        <h4 className="font-semibold text-app-primary">
+                          {app.jobId ? 'Job Application' : 'External Referral'}
                         </h4>
-                        <p className="text-sm text-gray-600">{app.status}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-app-secondary mt-0.5">Moved to status: <span className="text-blue-400 font-semibold">{app.status}</span></p>
+                        <p className="text-xs text-app-secondary mt-1">
                           {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'N/A'}
                         </p>
                       </div>

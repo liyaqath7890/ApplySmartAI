@@ -23,7 +23,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       case 'application': return 'text-blue-600 bg-blue-100';
       case 'interview': return 'text-purple-600 bg-purple-100';
       case 'job_match': return 'text-emerald-600 bg-emerald-100';
-      case 'system': return 'text-gray-600 bg-gray-100';
+      case 'system': return 'text-gray-500 bg-app-hover';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -44,8 +44,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
   return (
     <div
       className={`
-        flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-gray-50
-        ${notification.isRead ? 'border-gray-200 bg-white' : 'border-primary-200 bg-primary-50/50'}
+        flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-app-hover
+        ${notification.isRead ? 'border-app-border bg-app-card' : 'border-blue-400/50 bg-blue-500/5'}
       `}
     >
       <div className={`p-2 rounded-lg ${getIconColor()}`}>
@@ -53,14 +53,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between">
-          <h4 className={`font-semibold text-sm ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+          <h4 className={`font-semibold text-sm ${notification.isRead ? 'text-app-secondary' : 'text-app-primary'}`}>
             {notification.title}
           </h4>
-          <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+          <span className="text-xs text-app-secondary whitespace-nowrap ml-4">
             {getTimeAgo(notification.createdAt)}
           </span>
         </div>
-        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+        <p className="text-sm text-app-secondary mt-1">{notification.message}</p>
       </div>
     </div>
   );

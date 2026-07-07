@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { PageHeader, Button, StatsCard } from '@/shared/components/ui';
 import { GraduationCap, TrendingUp, AlertCircle, CheckCircle2, Target, BookOpen, Plus, Zap } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { learningService, SkillGap } from '@/api/services/learningService';
 
 interface SkillItem {
   id: string;
@@ -12,9 +14,6 @@ interface SkillItem {
   timeToClose: string;
   resources: string[];
 }
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { learningService, SkillGap } from '@/api/services/learningService';
 
 const mapProficiency = (level: string) => {
   switch (level?.toLowerCase()) {
@@ -34,23 +33,23 @@ const mapMarketDemand = (priority: number) => {
 };
 
 const DEMAND_COLORS: Record<string, string> = {
-  'Very High': 'bg-red-100 text-red-700',
-  'High': 'bg-orange-100 text-orange-700',
-  'Medium': 'bg-yellow-100 text-yellow-700',
-  'Low': 'bg-gray-100 text-gray-600',
+  'Very High': 'bg-red-500/10 text-red-400 border border-red-500/20',
+  'High': 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+  'Medium': 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  'Low': 'bg-slate-800 text-slate-400 border border-slate-700/50',
 };
 
 const GAP_COLOR = (gap: number) => {
-  if (gap >= 50) return 'text-red-600';
-  if (gap >= 25) return 'text-orange-600';
-  return 'text-emerald-600';
+  if (gap >= 50) return 'text-red-400';
+  if (gap >= 25) return 'text-orange-400';
+  return 'text-emerald-450';
 };
 
 const PROGRESS_COLOR = (level: number) => {
-  if (level >= 80) return 'bg-emerald-500';
+  if (level >= 80) return 'bg-emerald-400';
   if (level >= 50) return 'bg-blue-500';
-  if (level >= 30) return 'bg-orange-500';
-  return 'bg-red-500';
+  if (level >= 30) return 'bg-orange-455';
+  return 'bg-red-455';
 };
 
 export default function SkillGapPage() {
@@ -77,7 +76,7 @@ export default function SkillGapPage() {
     return data.gaps.map((g: SkillGap) => ({
       id: g.id,
       name: g.skillName,
-      category: 'General', // Backend model currently lacks category, defaulting
+      category: 'General',
       currentLevel: mapProficiency(g.currentProficiency),
       targetLevel: mapProficiency(g.requiredProficiency),
       marketDemand: mapMarketDemand(g.priority),
@@ -89,10 +88,10 @@ export default function SkillGapPage() {
   const categories = ['All', ...Array.from(new Set(skills.map(s => s.category)))];
   const filtered = activeCategory === 'All' ? skills : skills.filter(s => s.category === activeCategory);
 
-  const totalGap = Math.round(skills.reduce((acc, s) => acc + (s.targetLevel - s.currentLevel), 0) / skills.length);
+  const totalGap = skills.length ? Math.round(skills.reduce((acc, s) => acc + (s.targetLevel - s.currentLevel), 0) / skills.length) : 0;
   const readySkills = skills.filter(s => s.currentLevel >= s.targetLevel * 0.9).length;
   const criticalGaps = skills.filter(s => (s.targetLevel - s.currentLevel) >= 40).length;
-  const avgCurrent = Math.round(skills.reduce((acc, s) => acc + s.currentLevel, 0) / skills.length);
+  const avgCurrent = skills.length ? Math.round(skills.reduce((acc, s) => acc + s.currentLevel, 0) / skills.length) : 0;
 
   const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000); };
 
@@ -101,16 +100,22 @@ export default function SkillGapPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Skill Gap Analysis" subtitle="Identify and close the gaps between your current and target skills" icon={GraduationCap}>
+    <div className="space-y-6 animate-fade-in p-6 bg-app-bg text-app-primary min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-app-border pb-4 gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            Skill Gap Analysis
+          </h1>
+          <p className="text-sm text-app-secondary mt-1">Identify and close key technical skill gaps against target roles.</p>
+        </div>
         <Button onClick={handleRunAnalysis} disabled={analyzeMutation.isPending} className="flex items-center gap-2">
           {analyzeMutation.isPending ? <Zap className="h-4 w-4 animate-pulse" /> : <Zap className="h-4 w-4" />}
           {analyzeMutation.isPending ? 'Analyzing...' : 'Run Analysis'}
         </Button>
-      </PageHeader>
+      </div>
 
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm font-medium">
+        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-semibold">
           <CheckCircle2 className="h-4 w-4" />{successMsg}
         </div>
       )}
@@ -131,8 +136,8 @@ export default function SkillGapPage() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  activeCategory === cat ? 'bg-primary-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:border-primary-400'
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide border transition-all duration-200 ${
+                  activeCategory === cat ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500' : 'bg-app-card border-app-border text-app-secondary hover:bg-app-hover hover:text-app-primary'
                 }`}
               >
                 {cat}
@@ -147,20 +152,20 @@ export default function SkillGapPage() {
                 <div
                   key={skill.id}
                   onClick={() => setSelectedSkill(selectedSkill?.id === skill.id ? null : skill)}
-                  className={`bg-white rounded-xl border p-5 cursor-pointer transition-all hover:border-primary-300 ${
-                    selectedSkill?.id === skill.id ? 'border-primary-500 bg-primary-50/30' : 'border-gray-200'
+                  className={`glass-card p-5 cursor-pointer transition-all hover:border-slate-700 ${
+                    selectedSkill?.id === skill.id ? 'border-blue-500 bg-app-hover' : 'border-app-border'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">{skill.name}</h3>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{skill.category}</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${DEMAND_COLORS[skill.marketDemand]}`}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-app-primary">{skill.name}</h3>
+                        <span className="text-xs text-app-secondary bg-app-card border border-app-border px-2 py-0.5 rounded-full">{skill.category}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DEMAND_COLORS[skill.marketDemand]}`}>
                           {skill.marketDemand} Demand
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">Time to close: {skill.timeToClose}</p>
+                      <p className="text-xs text-app-secondary mt-1">Time to close: {skill.timeToClose}</p>
                     </div>
                     <span className={`text-sm font-bold ${GAP_COLOR(gap)}`}>
                       {gap > 0 ? `${gap}pt gap` : 'At target'}
@@ -170,29 +175,29 @@ export default function SkillGapPage() {
                   {/* Progress Bars */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500 w-20">Current</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <span className="text-xs text-app-secondary w-20">Current</span>
+                      <div className="flex-1 bg-app-hover rounded-full h-2">
                         <div className={`h-2 rounded-full transition-all ${PROGRESS_COLOR(skill.currentLevel)}`} style={{ width: `${skill.currentLevel}%` }} />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-8 text-right">{skill.currentLevel}%</span>
+                      <span className="text-xs font-semibold text-app-secondary w-8 text-right">{skill.currentLevel}%</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500 w-20">Target</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div className="bg-gray-400 h-2 rounded-full" style={{ width: `${skill.targetLevel}%` }} />
+                      <span className="text-xs text-app-secondary w-20">Target</span>
+                      <div className="flex-1 bg-app-hover rounded-full h-2">
+                        <div className="bg-slate-500 dark:bg-slate-400 h-2 rounded-full" style={{ width: `${skill.targetLevel}%` }} />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-8 text-right">{skill.targetLevel}%</span>
+                      <span className="text-xs font-semibold text-app-secondary w-8 text-right">{skill.targetLevel}%</span>
                     </div>
                   </div>
 
                   {selectedSkill?.id === skill.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                        <BookOpen className="h-4 w-4 text-primary-600" /> Recommended Resources
+                    <div className="mt-4 pt-4 border-t border-app-border">
+                      <p className="text-sm font-semibold text-app-primary mb-2 flex items-center gap-1">
+                        <BookOpen className="h-4 w-4 text-blue-400" /> Recommended Resources
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {skill.resources.map((r, i) => (
-                          <span key={i} className="text-xs bg-primary-50 text-primary-700 border border-primary-200 px-3 py-1 rounded-full">
+                          <span key={i} className="text-xs bg-blue-500/10 text-blue-450 border border-blue-500/25 px-3 py-1 rounded-full">
                             {r}
                           </span>
                         ))}
@@ -208,9 +213,9 @@ export default function SkillGapPage() {
         {/* Right Panel */}
         <div className="space-y-4">
           {/* Priority Actions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary-600" /> Priority Actions
+          <div className="glass-card p-5">
+            <h3 className="font-semibold text-app-primary mb-4 flex items-center gap-2">
+              <Target className="h-4 w-4 text-blue-400" /> Priority Actions
             </h3>
             <div className="space-y-3">
               {skills
@@ -218,13 +223,13 @@ export default function SkillGapPage() {
                 .sort((a, b) => (b.targetLevel - b.currentLevel) - (a.targetLevel - a.currentLevel))
                 .slice(0, 4)
                 .map((s, i) => (
-                  <div key={s.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={s.id} className="flex items-center gap-3 p-3 bg-app-card border border-app-border rounded-xl">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${
                       i === 0 ? 'bg-red-500' : i === 1 ? 'bg-orange-500' : 'bg-yellow-500'
                     }`}>{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
-                      <p className="text-xs text-gray-500">{s.targetLevel - s.currentLevel}pt gap · {s.timeToClose}</p>
+                      <p className="text-sm font-medium text-app-primary truncate">{s.name}</p>
+                      <p className="text-xs text-app-secondary mt-0.5">{s.targetLevel - s.currentLevel}pt gap · {s.timeToClose}</p>
                     </div>
                   </div>
                 ))}
@@ -232,16 +237,16 @@ export default function SkillGapPage() {
           </div>
 
           {/* 30-Day Challenge */}
-          <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-xl border border-primary-200 p-5">
+          <div className="bg-gradient-to-br from-blue-950/20 to-purple-950/20 rounded-2xl border border-blue-500/20 p-5">
             <div className="flex items-center gap-2 mb-3">
-              <Zap className="h-5 w-5 text-primary-600" />
-              <h3 className="font-semibold text-gray-900">30-Day Challenge</h3>
+              <Zap className="h-5 w-5 text-blue-400 animate-bounce" />
+              <h3 className="font-semibold text-app-primary">30-Day Challenge</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-4">Focus on System Design this month — it has the highest demand and career impact.</p>
+            <p className="text-sm text-app-secondary mb-4">Focus on System Design this month — it has the highest demand and career impact.</p>
             <div className="space-y-2 mb-4">
               {['Complete ByteByteGo Course', 'Design 3 real systems', 'Mock system design interview', 'Document solutions on GitHub'].map((task, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                  <CheckCircle2 className="h-4 w-4 text-primary-400 flex-shrink-0" />
+                <div key={i} className="flex items-center gap-2 text-sm text-app-primary">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
                   {task}
                 </div>
               ))}

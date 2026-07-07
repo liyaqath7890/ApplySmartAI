@@ -153,3 +153,62 @@ async function getSkillTrendsData() {
     emerging: ['Generative AI', 'Quantum Computing', 'Edge Computing']
   };
 }
+
+export const getOperationsStats = async (req, res) => {
+  try {
+    const { Company, ExternalJob, Notification, JobAnalysisV2 } = await import('../routes/models/index.js');
+    const { default: jobQueueService } = await import('../services/JobQueueService.js');
+    const { default: schedulerService } = await import('../services/SchedulerService.js');
+
+    const activeCompanies = await Company.count({ where: { activeStatus: true } });
+    
+    // Jobs sync counts
+    const totalJobs = await ExternalJob.count();
+    const syncedToday = await ExternalJob.count({
+      where: {
+        createdAt: {
+          [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    // Queue stats
+    const queueStats = await jobQueueService.getQueueStats();
+
+    // Notification statistics
+    const totalNotifications = await Notification.count();
+    const notificationsLast24h = await Notification.count({
+      where: {
+        createdAt: {
+          [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    // AI Match statistics
+    const totalMatches = await JobAnalysisV2.count();
+
+    res.json({
+      success: true,
+      stats: {
+        companiesMonitored: activeCompanies,
+        atsProviders: 19,
+        jobsSyncedToday: syncedToday,
+        totalJobs,
+        queueStatus: queueStats,
+        schedulerStatus: schedulerService.getStatus(),
+        notificationStats: {
+          total: totalNotifications,
+          last24h: notificationsLast24h
+        },
+        aiMatchStats: {
+          total: totalMatches
+        },
+        systemStatus: 'healthy',
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

@@ -7,14 +7,21 @@ interface UIState {
   setSidebarCollapsed: (v: boolean) => void;
 }
 
+const initialDarkMode = localStorage.getItem('darkMode') === 'true';
+if (initialDarkMode) {
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+}
+
 export const useUIStore = create<UIState>()((set) => ({
-  darkMode: false,
+  darkMode: initialDarkMode,
   sidebarCollapsed: false,
 
   toggleDarkMode: () =>
     set((state) => {
       const next = !state.darkMode;
-      // Apply/remove the `dark` class on the html element
+      localStorage.setItem('darkMode', String(next));
       if (next) {
         document.documentElement.classList.add('dark');
       } else {

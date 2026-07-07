@@ -6,6 +6,7 @@ import {
   updateJob,
   deleteJob,
   applyForJob,
+  importJob,
 } from '../controllers/jobController.js';
 import { protect, restrictTo } from '../middleware/auth.js';
 import { validateCreateJob, validateUUIDParam } from '../middleware/validation.js';
@@ -17,6 +18,7 @@ router.get('/', getJobs);
 router.get('/:id', validateUUIDParam('id'), getJob);
 
 // Protected routes (Candidate only)
+router.post('/import', protect, restrictTo('candidate'), importJob);
 router.post('/:id/apply', protect, restrictTo('candidate'), applyForJob);
 
 // Protected routes (Recruiter only)

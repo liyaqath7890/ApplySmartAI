@@ -115,14 +115,14 @@ export default function CompanyDetailsPage() {
         <ChevronLeft className="h-4 w-4 mr-2" /> Back to Companies
       </Button>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+      <div className="bg-app-card rounded-xl border border-app-border p-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="h-24 w-24 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
             <Building2 className="h-12 w-12 text-primary-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{company.name}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold text-app-primary mb-2">{company.name}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-app-secondary">
               <div className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {company.headquarters || 'Remote'}</div>
               <div className="flex items-center gap-1"><Users className="h-4 w-4" /> {company.companySize || 'Unknown'} employees</div>
               <div className="flex items-center gap-1"><Globe className="h-4 w-4" /> <a href={company.website} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">Website</a></div>
@@ -142,9 +142,9 @@ export default function CompanyDetailsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">About {company.name}</h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{company.description || 'No description available.'}</p>
+          <div className="bg-app-card rounded-xl border border-app-border p-6">
+            <h2 className="text-xl font-bold text-app-primary mb-4">About {company.name}</h2>
+            <p className="text-app-secondary leading-relaxed whitespace-pre-wrap">{company.description || 'No description available.'}</p>
             
             <div className="mt-6 flex flex-wrap gap-2">
               {company.fresherFriendly && <Badge variant="success">Fresher Friendly</Badge>}
@@ -166,11 +166,11 @@ export default function CompanyDetailsPage() {
                   <p className="text-indigo-800/80 text-sm">{insights.cultureSummary}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/60 p-4 rounded-lg">
+                  <div className="bg-app-hover/60 p-4 rounded-lg">
                     <h3 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Hiring Trends</h3>
                     <p className="text-indigo-800/80 text-sm">{insights.hiringTrends}</p>
                   </div>
-                  <div className="bg-white/60 p-4 rounded-lg">
+                  <div className="bg-app-hover/60 p-4 rounded-lg">
                     <h3 className="font-semibold text-indigo-900 mb-1">Interview Difficulty</h3>
                     <p className="text-indigo-800/80 text-sm">{insights.interviewDifficulty}</p>
                   </div>
@@ -193,22 +193,22 @@ export default function CompanyDetailsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Company Overview</h2>
+          <div className="bg-app-card rounded-xl border border-app-border p-6">
+            <h2 className="font-bold text-app-primary mb-4">Company Overview</h2>
             <div className="space-y-4">
               <div>
-                <span className="text-sm text-gray-500 block">Industry</span>
+                <span className="text-sm text-app-secondary block">Industry</span>
                 <span className="font-medium">{company.industry || 'N/A'}</span>
               </div>
               {company.category && (
                 <div>
-                  <span className="text-sm text-gray-500 block">Category</span>
+                  <span className="text-sm text-app-secondary block">Category</span>
                   <span className="font-medium">{company.category}</span>
                 </div>
               )}
               {company.foundedYear && (
                 <div>
-                  <span className="text-sm text-gray-500 block">Founded</span>
+                  <span className="text-sm text-app-secondary block">Founded</span>
                   <span className="font-medium">{company.foundedYear}</span>
                 </div>
               )}
@@ -221,12 +221,12 @@ export default function CompanyDetailsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-app-card rounded-xl border border-app-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900">Active Jobs</h2>
+              <h2 className="font-bold text-app-primary">Active Jobs</h2>
               <Badge variant="primary">{company.activeJobs}</Badge>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-app-secondary mb-4">
               {company.name} currently has {company.activeJobs} open positions.
             </p>
             <Button className="w-full" variant="outline" onClick={() => navigate(`/app/jobs?company=${company.name}`)}>
@@ -235,11 +235,11 @@ export default function CompanyDetailsPage() {
           </div>
           
           {company.technologiesUsed && company.technologiesUsed.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="font-bold text-gray-900 mb-4">Tech Stack</h2>
+            <div className="bg-app-card rounded-xl border border-app-border p-6">
+              <h2 className="font-bold text-app-primary mb-4">Tech Stack</h2>
               <div className="flex flex-wrap gap-2">
                 {company.technologiesUsed.map(tech => (
-                  <span key={tech} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">{tech}</span>
+                  <span key={tech} className="px-2 py-1 bg-app-hover text-app-secondary rounded text-xs font-medium">{tech}</span>
                 ))}
               </div>
             </div>

@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Calendar, Award, ExternalLink } from 'lucide-react';
 import { Button, EmptyState } from '@/shared/components/ui';
@@ -50,9 +50,9 @@ export const CertificationManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-app-primary flex items-center gap-2">
           Certifications
         </h2>
         <Button onClick={() => setIsAdding(!isAdding)} className="flex items-center gap-2">
@@ -62,40 +62,40 @@ export const CertificationManager: React.FC = () => {
       </div>
 
       {isAdding && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-6 p-4 bg-app-hover rounded-lg border border-app-border">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Certification Name</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Certification Name</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Issuing Organization</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Issuing Organization</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.issuingOrganization}
                 onChange={(e) => setFormData({ ...formData, issuingOrganization: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Issue Date</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.issueDate ? new Date(formData.issueDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, issueDate: new Date(e.target.value) })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expiration Date</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Expiration Date</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.expirationDate ? new Date(formData.expirationDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, expirationDate: new Date(e.target.value) })}
               />
@@ -103,19 +103,19 @@ export const CertificationManager: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Credential ID</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Credential ID</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.credentialId}
                 onChange={(e) => setFormData({ ...formData, credentialId: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Credential URL</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Credential URL</label>
               <input
                 type="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.credentialUrl}
                 onChange={(e) => setFormData({ ...formData, credentialUrl: e.target.value })}
               />
@@ -157,7 +157,7 @@ export const CertificationManager: React.FC = () => {
                       </div>
                     )}
                     {cert.credentialId && (
-                      <p className="text-sm text-gray-600 mt-2">ID: {cert.credentialId}</p>
+                      <p className="text-sm text-app-secondary mt-2">ID: {cert.credentialId}</p>
                     )}
                     {cert.credentialUrl && (
                       <a
@@ -193,4 +193,5 @@ export const CertificationManager: React.FC = () => {
     </div>
   );
 };
+
 

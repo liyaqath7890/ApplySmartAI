@@ -8,7 +8,8 @@ import { BaseATSProvider } from './BaseATSProvider.js';
 export class AshbyProvider extends BaseATSProvider {
   constructor(adapterConfig = {}) {
     super(adapterConfig);
-    this.baseUrl = adapterConfig.baseUrl || 'https://jobs.ashbyhq.com';
+    // Public posting API — no auth required
+    this.baseUrl = adapterConfig.baseUrl || 'https://api.ashbyhq.com/posting-api/job-board';
   }
 
   /**
@@ -39,14 +40,16 @@ export class AshbyProvider extends BaseATSProvider {
 
       for (const companyId of companies) {
         try {
-          const url = `${this.baseUrl}/${companyId}/api`;
+          const url = `${this.baseUrl}/${companyId}`;
           
           const data = await this.requestWithRetry(url, {
             method: 'GET'
           });
 
-          if (data && data.jobPostings) {
-            const companyJobs = data.jobPostings.map(job => ({
+          // Ashby posting-api returns { jobs: [...] }
+          const listings = data?.jobs || data?.jobPostings || [];
+          if (listings.length > 0) {
+            const companyJobs = listings.map(job => ({
               ...job,
               companyName: companyId,
               companyDisplayName: data.organization?.name || companyId
@@ -67,25 +70,26 @@ export class AshbyProvider extends BaseATSProvider {
   }
 
   /**
-   * Fetch jobs from a specific company's Ashby board
+   * Fetch jobs for a Company model instance (DB-driven, implements BaseATSProvider interface)
    */
-  async fetchCompanyJobs(companyId, searchParams = {}) {
+  async fetchCompanyJobs(company, options = {}) {
+    const companyId = company.externalCompanyId || company.name?.toLowerCase().replace(/\s+/g, '-');
     try {
-      const url = `${this.baseUrl}/${companyId}/api`;
+      const url = `${this.baseUrl}/${companyId}`;
       
       const data = await this.requestWithRetry(url, {
         method: 'GET'
       });
 
-      if (data && data.jobPostings) {
-        return data.jobPostings.map(job => ({
-          ...job,
-          companyName: companyId,
-          companyDisplayName: data.organization?.name || companyId
-        }));
-      }
+      // Ashby posting-api returns { jobs: [...] }
+      const listings = data?.jobs || data?.jobPostings || [];
+      this.log(`Ashby ${companyId}: ${listings.length} jobs returned`);
 
-      return [];
+      return listings.map(job => ({
+        ...job,
+        companyName: companyId,
+        companyDisplayName: data?.organization?.name || company.name
+      }));
     } catch (error) {
       this.log(`Error fetching jobs from ${companyId}: ${error.message}`, 'error');
       return [];
@@ -98,15 +102,25 @@ export class AshbyProvider extends BaseATSProvider {
   normalizeJob(rawJob) {
     if (!rawJob) return null;
 
-    const description = rawJob.description || '';
-    const textContent = this.extractTextContent(description);
+    // Ashby posting-api uses descriptionHtml / descriptionPlain
+    const htmlDesc = rawJob.descriptionHtml || rawJob.description || '';
+    const textContent = rawJob.descriptionPlain 
+      ? rawJob.descriptionPlain 
+      : this.extractTextContent(htmlDesc);
+
+    // Work type: Ashby uses workplaceType = "Remote"|"Hybrid"|"OnSite" and isRemote boolean
+    let workType = 'on-site';
+    const wt = rawJob.workplaceType || '';
+    if (rawJob.isRemote || wt === 'Remote') workType = 'remote';
+    else if (wt === 'Hybrid') workType = 'hybrid';
 
     return {
       platform: 'ashby',
       externalJobId: this.generateExternalJobId(rawJob),
       title: rawJob.title,
       company: rawJob.companyDisplayName || rawJob.companyName || 'Confidential',
-      location: rawJob.locationName || rawJob.location || '',
+      // Ashby posting-api has location as a string field
+      location: rawJob.location || rawJob.locationName || (rawJob.address?.postalAddress?.addressCountry) || '',
       description: textContent,
       requirements: this.extractRequirements(textContent),
       responsibilities: this.extractResponsibilities(textContent),
@@ -115,9 +129,10 @@ export class AshbyProvider extends BaseATSProvider {
       salaryMax: null,
       employmentType: this.normalizeEmploymentType(rawJob.employmentType),
       experienceLevel: this.normalizeExperienceLevel(rawJob.title),
-      workType: this.inferWorkType(rawJob, textContent),
-      jobUrl: rawJob.url || `https://jobs.ashbyhq.com/${rawJob.companyName}/${rawJob.id}`,
-      postedDate: this.parseDate(rawJob.postedAt || rawJob.created_at),
+      workType,
+      // Ashby posting-api returns jobUrl directly
+      jobUrl: rawJob.jobUrl || rawJob.url || rawJob.applyUrl || `https://jobs.ashbyhq.com/${rawJob.companyName}/${rawJob.id}`,
+      postedDate: this.parseDate(rawJob.publishedAt || rawJob.postedAt || rawJob.created_at),
       source: 'Ashby',
       raw: rawJob
     };

@@ -1,6 +1,8 @@
-import { Job, Application, User, Skill, RecruiterProfile } from '../routes/models/index.js';
+import { Job, Application, User, Skill, RecruiterProfile, ExternalJob, CandidateProfile } from '../routes/models/index.js';
 import { Op } from 'sequelize';
 import { AppError, catchAsync } from '../middleware/errorHandler.js';
+import JobImportService from '../services/JobImportService.js';
+import aiPipeline from '../services/AIJobProcessingPipeline.js';
 
 // @desc    Get all jobs with filtering, sorting, and pagination
 // @route   GET /api/jobs
@@ -217,5 +219,56 @@ export const applyForJob = catchAsync(async (req, res, next) => {
   res.status(201).json({
     success: true,
     data: application,
+  });
+});
+
+// @desc    Import a job from an external URL
+// @route   POST /api/jobs/import
+// @access  Private (Candidate only)
+export const importJob = catchAsync(async (req, res, next) => {
+  const { jobUrl } = req.body;
+
+  if (!jobUrl) {
+    return next(new AppError('Please provide a job URL', 400));
+  }
+
+  // 1. Universal Import
+  const { job, isDuplicate } = await JobImportService.importFromUrl(jobUrl, req.user.id);
+
+  // 2. Fetch candidate info for AI processing
+  const candidate = await User.findByPk(req.user.id, {
+    include: [
+      { model: CandidateProfile, as: 'candidateProfile' },
+      { model: Skill, as: 'skills' }
+    ]
+  });
+
+  // 3. Immediately process job using AI pipeline
+  await aiPipeline.processJob(job, candidate);
+
+  // 4. Create application tracking record
+  let application = await Application.findOne({
+    where: {
+      externalJobId: job.id,
+      candidateId: req.user.id
+    }
+  });
+
+  if (!application) {
+    application = await Application.create({
+      externalJobId: job.id,
+      candidateId: req.user.id,
+      status: 'imported',
+      appliedAt: new Date()
+    });
+  }
+
+  res.status(201).json({
+    success: true,
+    message: isDuplicate ? 'Job details loaded (previously imported)' : 'Job successfully imported and analyzed',
+    data: {
+      job,
+      application
+    }
   });
 });

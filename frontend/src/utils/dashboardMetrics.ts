@@ -2,11 +2,26 @@ import type { Application } from '@/store/jobPipelineStore';
 import type { ExternalJob } from '@/store/externalJobStore';
 import type { Skill } from '@/store/masterProfileStore';
 
-const STAGE_ORDER = ['saved', 'applied', 'screening', 'interview', 'offer', 'rejected'] as const;
+const STAGE_ORDER = [
+  'imported',
+  'resume_generated',
+  'cover_letter_generated',
+  'ready_to_apply',
+  'applied',
+  'assessment',
+  'interview_scheduled',
+  'interview_completed',
+  'hr_round',
+  'technical_round',
+  'final_round',
+  'offer',
+  'rejected',
+  'withdrawn'
+] as const;
 
 export function computePipelineFunnel(applications: Application[]) {
   return STAGE_ORDER.map((stage) => ({
-    name: stage.charAt(0).toUpperCase() + stage.slice(1),
+    name: stage.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
     value: applications.filter((a) => a.status === stage).length,
   })).filter((s) => s.value > 0);
 }

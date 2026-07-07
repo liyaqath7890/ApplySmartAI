@@ -14,6 +14,8 @@ export { WellfoundProvider } from './WellfoundProvider.js';
 export { GreenhouseProvider } from './GreenhouseProvider.js';
 export { LeverProvider } from './LeverProvider.js';
 export { AshbyProvider } from './AshbyProvider.js';
+export { TeamtailorProvider } from './TeamtailorProvider.js';
+export { SmartRecruitersProvider } from './SmartRecruitersProvider.js';
 
 // RSS Feed Aggregator
 export { RSSFeedProvider } from './RSSFeedProvider.js';
@@ -21,15 +23,27 @@ export { RSSFeedProvider } from './RSSFeedProvider.js';
 // Mock providers for development/testing
 export * from './MockProviders.js';
 
-// ATS / Job Board Stubs
+// ATS / Job Board Real Providers
 export { WorkdayProvider } from './WorkdayProvider.js';
-export { SmartRecruitersProvider } from './SmartRecruitersProvider.js';
-export { TeamtailorProvider } from './TeamtailorProvider.js';
 export { OracleProvider } from './OracleProvider.js';
 export { SAPSuccessFactorsProvider } from './SAPSuccessFactorsProvider.js';
 export { DarwinboxProvider } from './DarwinboxProvider.js';
 export { iCIMSProvider } from './iCIMSProvider.js';
 export { TaleoProvider } from './TaleoProvider.js';
+export { WorkableProvider } from './WorkableProvider.js';
+export { RecruiteeProvider } from './RecruiteeProvider.js';
+export { BambooHRProvider } from './BambooHRProvider.js';
+export { JobviteProvider } from './JobviteProvider.js';
+export { JazzHRProvider } from './JazzHRProvider.js';
+export { PersonioProvider } from './PersonioProvider.js';
+export { BreezyHRProvider } from './BreezyHRProvider.js';
+export { FountainProvider } from './FountainProvider.js';
+export { PinpointProvider } from './PinpointProvider.js';
+export { ComeetProvider } from './ComeetProvider.js';
+export { ZohoRecruitProvider as ZohoRecruitProvider } from './ZohoRecruitProvider.js';
+export { RipplingProvider } from './RipplingProvider.js';
+
+// Other Stubs
 export { InternshalaProvider } from './InternshalaProvider.js';
 export { NaukriProvider } from './NaukriProvider.js';
 export { FounditProvider } from './FounditProvider.js';

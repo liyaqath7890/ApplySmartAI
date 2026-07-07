@@ -34,9 +34,9 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-app-bg">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-app-card shadow-sm sticky top-0 z-50 border-b border-app-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -55,7 +55,7 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === item.href
                       ? 'text-primary-600 bg-primary-50'
-                      : 'text-dark-600 hover:text-primary-600 hover:bg-gray-50'
+                      : 'text-dark-600 hover:text-primary-600 hover:bg-app-hover'
                   }`}
                 >
                   <item.icon className="h-4 w-4 mr-2" />
@@ -123,7 +123,7 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-t">
+          <div className="md:hidden bg-app-card border-t border-app-border">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navigation.map((item) => (
                 <Link
@@ -132,7 +132,7 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
                   className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
                     location.pathname === item.href
                       ? 'text-primary-600 bg-primary-50'
-                      : 'text-dark-600 hover:text-primary-600 hover:bg-gray-50'
+                      : 'text-dark-600 hover:text-primary-600 hover:bg-app-hover'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -144,7 +144,7 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
                 <>
                   <Link
                     to="/dashboard"
-                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-dark-600 hover:text-primary-600 hover:bg-gray-50"
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-dark-600 hover:text-primary-600 hover:bg-app-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <LayoutDashboard className="h-5 w-5 mr-3" />
@@ -162,7 +162,7 @@ export default function MainLayout({ children }: { children?: ReactNode }) {
                 <>
                   <Link
                     to="/login"
-                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-dark-600 hover:text-primary-600 hover:bg-gray-50"
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-dark-600 hover:text-primary-600 hover:bg-app-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Login

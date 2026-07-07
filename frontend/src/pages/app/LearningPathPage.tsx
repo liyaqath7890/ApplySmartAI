@@ -27,12 +27,10 @@ interface Module {
   locked: boolean;
 }
 
-
-
 const LEVEL_COLORS: Record<string, string> = {
-  Beginner: 'bg-emerald-100 text-emerald-700',
-  Intermediate: 'bg-blue-100 text-blue-700',
-  Advanced: 'bg-purple-100 text-purple-700',
+  Beginner: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25',
+  Intermediate: 'bg-blue-500/10 text-blue-400 border border-blue-500/25',
+  Advanced: 'bg-purple-500/10 text-purple-400 border border-purple-500/25',
 };
 
 export default function LearningPathPage() {
@@ -51,7 +49,7 @@ export default function LearningPathPage() {
     learningService.getLearningPaths()
       .then((data) => {
         if (data.paths?.length) {
-          const mapped: Course[] = data.paths.map((p, i) => ({
+          const mapped: Course[] = data.paths.map((p) => ({
             id: p.id,
             title: p.title,
             provider: 'CareerOS',
@@ -110,11 +108,18 @@ export default function LearningPathPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Learning Path" subtitle="Track your skill development and course progress" icon={BookOpen} />
+    <div className="space-y-6 animate-fade-in p-6 bg-app-bg text-app-primary min-h-screen">
+      <div className="flex justify-between items-center border-b border-app-border pb-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            Learning Paths
+          </h1>
+          <p className="text-sm text-app-secondary mt-1">Track your skill development and active curriculum progress.</p>
+        </div>
+      </div>
 
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm font-medium">
+        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-455 text-sm font-semibold">
           <CheckCircle2 className="h-4 w-4" />{successMsg}
         </div>
       )}
@@ -132,8 +137,8 @@ export default function LearningPathPage() {
           <button
             key={f}
             onClick={() => setActiveFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              activeFilter === f ? 'bg-primary-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:border-primary-400'
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide border transition-all duration-200 ${
+              activeFilter === f ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500' : 'bg-app-card border-app-border text-app-secondary hover:bg-app-hover hover:text-app-primary'
             }`}
           >
             {f}
@@ -143,28 +148,28 @@ export default function LearningPathPage() {
 
       <div className="space-y-4">
         {filtered.map(course => (
-          <div key={course.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-primary-300 transition-all">
+          <div key={course.id} className="glass-card overflow-hidden hover:border-slate-700">
             <div
               className="flex items-center justify-between p-5 cursor-pointer"
               onClick={() => setExpandedCourse(expandedCourse === course.id ? null : course.id)}
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className={`p-2.5 rounded-lg flex-shrink-0 ${course.completed ? 'bg-emerald-100' : 'bg-primary-100'}`}>
+                <div className={`p-2.5 rounded-xl flex-shrink-0 border ${course.completed ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>
                   {course.completed ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <CheckCircle2 className="h-5 w-5" />
                   ) : (
-                    <BookOpen className="h-5 w-5 text-primary-600" />
+                    <BookOpen className="h-5 w-5" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900">{course.title}</h3>
+                    <h3 className="font-semibold text-app-primary">{course.title}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[course.level]}`}>{course.level}</span>
                     {course.completed && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-100 text-emerald-700">Completed</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Completed</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
+                  <div className="flex items-center gap-3 mt-1 text-sm text-app-secondary flex-wrap">
                     <span>{course.provider}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{course.duration}</span>
@@ -173,10 +178,10 @@ export default function LearningPathPage() {
                   </div>
                   {course.enrolled && (
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 max-w-xs bg-gray-200 rounded-full h-1.5">
-                        <div className="bg-primary-600 h-1.5 rounded-full transition-all" style={{ width: `${course.progress}%` }} />
+                      <div className="flex-1 max-w-xs bg-app-hover rounded-full h-1.5">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${course.progress}%` }} />
                       </div>
-                      <span className="text-xs text-gray-500">{course.progress}%</span>
+                      <span className="text-xs text-app-secondary">{course.progress}%</span>
                     </div>
                   )}
                 </div>
@@ -185,43 +190,43 @@ export default function LearningPathPage() {
                 {!course.enrolled ? (
                   <Button size="sm" onClick={e => { e.stopPropagation(); handleEnroll(course.id); }}>Enroll</Button>
                 ) : (
-                  <Button size="sm" variant="ghost" onClick={e => e.stopPropagation()} className="flex items-center gap-1">
-                    <Play className="h-4 w-4" /> Continue
+                  <Button size="sm" variant="ghost" onClick={e => e.stopPropagation()} className="flex items-center gap-1 text-blue-450 hover:text-blue-300">
+                    <Play className="h-4 w-4 animate-pulse" /> Continue
                   </Button>
                 )}
-                {expandedCourse === course.id ? <ChevronDown className="h-4 w-4 text-gray-400" /> : <ChevronRight className="h-4 w-4 text-gray-400" />}
+                {expandedCourse === course.id ? <ChevronDown className="h-4 w-4 text-app-secondary" /> : <ChevronRight className="h-4 w-4 text-app-secondary" />}
               </div>
             </div>
 
             {expandedCourse === course.id && (
-              <div className="border-t border-gray-100 bg-gray-50 p-5">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Course Modules</h4>
+              <div className="border-t border-app-border bg-app-hover/10 p-5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-app-secondary mb-3">Course Modules</h4>
                 <div className="space-y-2">
                   {course.modules.map((module, idx) => (
                     <div
                       key={module.id}
                       onClick={() => course.enrolled && !module.locked && handleToggleModule(course.id, module.id)}
-                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                        module.locked ? 'bg-gray-100 border-gray-200 opacity-60' :
-                        module.completed ? 'bg-emerald-50 border-emerald-200 cursor-pointer hover:border-emerald-400' :
-                        'bg-white border-gray-200 cursor-pointer hover:border-primary-300'
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                        module.locked ? 'bg-app-card border-app-border opacity-60' :
+                        module.completed ? 'bg-emerald-950/10 border-emerald-500/20 cursor-pointer hover:border-emerald-500/40 text-emerald-350' :
+                        'bg-app-card border-app-border cursor-pointer hover:border-slate-500 text-app-primary'
                       }`}
                     >
                       <div className="flex-shrink-0">
                         {module.locked ? (
-                          <Lock className="h-4 w-4 text-gray-400" />
+                          <Lock className="h-4 w-4 text-app-secondary" />
                         ) : module.completed ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                         ) : (
-                          <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                          <div className="h-4 w-4 rounded-full border-2 border-slate-700" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className={`text-sm font-medium ${module.completed ? 'text-emerald-800 line-through' : 'text-gray-800'}`}>
+                        <p className={`text-sm font-semibold ${module.completed ? 'text-emerald-400 line-through' : 'text-app-primary'}`}>
                           {idx + 1}. {module.title}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-xs text-app-secondary flex items-center gap-1">
                         <Clock className="h-3 w-3" />{module.duration}
                       </span>
                     </div>

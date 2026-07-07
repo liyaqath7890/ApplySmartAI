@@ -1,6 +1,6 @@
 import jobAggregationService from '../services/jobAggregation/JobAggregationService.js';
 import applicationOrchestratorService from '../services/ApplicationOrchestratorService.js';
-import { ApplicationPackage, ExternalJob } from '../routes/models/index.js';
+import { ApplicationPackage, ExternalJob, Job, Resume, CoverLetter } from '../routes/models/index.js';
 
 export const aggregateJobs = async (req, res) => {
   try {
@@ -60,9 +60,9 @@ export const getApplicationPackages = async (req, res) => {
       where,
       include: [
         { model: ExternalJob, as: 'externalJob' },
-        { model: 'Job', as: 'job' },
-        { model: 'Resume', as: 'resume' },
-        { model: 'CoverLetter', as: 'coverLetter' }
+        { model: Job, as: 'job' },
+        { model: Resume, as: 'resume' },
+        { model: CoverLetter, as: 'coverLetter' }
       ],
       order: [['createdAt', 'DESC']]
     });

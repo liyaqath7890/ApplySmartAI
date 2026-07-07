@@ -9,8 +9,8 @@ const runTest = async () => {
     await sequelize.authenticate();
     console.log('✅ Connection authenticated successfully!');
     
-    await sequelize.sync({ force: false });
-    console.log('✅ All tables created successfully!');
+    await sequelize.sync({ alter: true });
+    console.log('✅ All tables synchronized and altered successfully!');
     
     console.log('🎉 Test passed!');
     

@@ -67,9 +67,10 @@ export class LeverProvider extends BaseATSProvider {
   }
 
   /**
-   * Fetch jobs from a specific company's Lever board
+   * Fetch jobs for a Company model instance (DB-driven, implements BaseATSProvider interface)
    */
-  async fetchCompanyJobs(companyId, searchParams = {}) {
+  async fetchCompanyJobs(company, options = {}) {
+    const companyId = company.externalCompanyId || company.name?.toLowerCase().replace(/\s+/g, '-');
     try {
       const url = `${this.baseUrl}/${companyId}`;
       
@@ -80,7 +81,8 @@ export class LeverProvider extends BaseATSProvider {
       if (Array.isArray(data)) {
         return data.map(job => ({
           ...job,
-          companyName: companyId
+          companyName: companyId,
+          companyDisplayName: company.name
         }));
       }
 

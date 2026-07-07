@@ -5,7 +5,7 @@
  */
 
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { protect as authenticateToken } from '../middleware/auth.js';
 import connectorService from '../services/CompanyConnectorService.js';
 import companyInsightService from '../services/CompanyInsightService.js';
 import { Company, SavedCompany, CandidateProfile } from './models/index.js';
@@ -82,6 +82,20 @@ router.post('/', authenticateToken, async (req, res) => {
     res.status(201).json({ success: true, company });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /api/companies/discover ──────────────────────────────────────────────
+router.post('/discover', authenticateToken, async (req, res) => {
+  try {
+    const { default: discoveryEngine } = await import('../services/jobAggregation/CompanyDiscoveryEngine.js');
+    const company = await discoveryEngine.discoverCompanyFromJob(req.body);
+    if (!company) {
+      return res.status(400).json({ success: false, error: 'Could not discover ATS company from the provided URL' });
+    }
+    res.json({ success: true, company });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

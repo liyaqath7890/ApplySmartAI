@@ -28,10 +28,10 @@ export default function ProfileCompleteness({ compact = false, showLink = true }
       <div className="flex items-center gap-3">
         <div className="flex-1">
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600">Profile</span>
+            <span className="text-app-secondary">Profile</span>
             <span className={`font-semibold ${color}`}>{score}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-app-hover rounded-full h-2">
             <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${score}%` }} />
           </div>
         </div>
@@ -40,16 +40,16 @@ export default function ProfileCompleteness({ compact = false, showLink = true }
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Profile Completeness</h3>
-          <p className="text-sm text-gray-600">{score >= 80 ? 'Great job! Your profile is strong.' : 'Complete your profile to improve match scores.'}</p>
+          <h3 className="text-lg font-semibold text-app-primary">Profile Completeness</h3>
+          <p className="text-sm text-app-secondary">{score >= 80 ? 'Great job! Your profile is strong.' : 'Complete your profile to improve match scores.'}</p>
         </div>
         <div className={`text-3xl font-bold ${color}`}>{score}%</div>
       </div>
 
-      <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
+      <div className="w-full bg-app-hover rounded-full h-3 mb-6">
         <div className={`${barColor} h-3 rounded-full transition-all`} style={{ width: `${score}%` }} />
       </div>
 
@@ -59,15 +59,15 @@ export default function ProfileCompleteness({ compact = false, showLink = true }
             {section.complete ? (
               <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
             ) : (
-              <Circle className="h-4 w-4 text-gray-300 flex-shrink-0" />
+              <Circle className="h-4 w-4 text-app-secondary flex-shrink-0" />
             )}
-            <span className={section.complete ? 'text-gray-700' : 'text-gray-500'}>{section.name}</span>
+            <span className={section.complete ? 'text-app-primary' : 'text-app-secondary'}>{section.name}</span>
           </div>
         ))}
       </div>
 
       {missingItems.length > 0 && score < 100 && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-app-secondary mb-4">
           Next: {missingItems[0]}
         </p>
       )}
@@ -75,7 +75,7 @@ export default function ProfileCompleteness({ compact = false, showLink = true }
       {showLink && score < 100 && (
         <Link
           to="/app/master-profile"
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
+          className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-400"
         >
           Complete profile
           <ArrowRight className="h-4 w-4" />

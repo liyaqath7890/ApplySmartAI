@@ -81,6 +81,7 @@ class JobDiscoveryService {
   async searchJobs(candidateId, platforms, filters) {
     const allJobs = [];
 
+    // 1. Fetch from live connectors if any match
     for (const platform of platforms) {
       const connector = this.connectors.get(platform);
       if (connector) {
@@ -93,8 +94,8 @@ class JobDiscoveryService {
       }
     }
 
-    // Save jobs to database
-    const savedJobs = [];
+    // Save connector jobs to database
+    const savedConnectorJobs = [];
     for (const job of allJobs) {
       try {
         const [savedJob] = await ExternalJob.findOrCreate({
@@ -107,13 +108,73 @@ class JobDiscoveryService {
             ...job
           }
         });
-        savedJobs.push(savedJob.toJSON());
+        savedConnectorJobs.push(savedJob);
       } catch (error) {
         console.error('Error saving job:', error);
       }
     }
 
-    return savedJobs;
+    // 2. Fetch all matching jobs from the database (including background-synced jobs)
+    const { Op } = await import('sequelize');
+    const { JobAnalysisV2 } = await import('../routes/models/index.js');
+    
+    const dbWhere = {
+      isExpired: false
+    };
+
+    if (filters.query) {
+      dbWhere[Op.or] = [
+        { title: { [Op.iLike]: `%${filters.query}%` } },
+        { company: { [Op.iLike]: `%${filters.query}%` } },
+        { description: { [Op.iLike]: `%${filters.query}%` } }
+      ];
+    }
+
+    if (filters.location) {
+      dbWhere.location = { [Op.iLike]: `%${filters.location}%` };
+    }
+
+    // Filter platforms if specified
+    const targetPlatforms = (platforms || []).filter(p => p !== 'mock');
+    if (targetPlatforms.length > 0) {
+      dbWhere.platform = { [Op.in]: targetPlatforms };
+    }
+
+    const dbJobs = await ExternalJob.findAll({
+      where: dbWhere,
+      limit: 100
+    });
+
+    // Hydrate candidate-specific match analysis
+    const hydratedJobs = [];
+    for (const job of [...savedConnectorJobs, ...dbJobs]) {
+      const jobJson = job.toJSON ? job.toJSON() : job;
+      
+      // Prevent duplicates in returned list
+      if (hydratedJobs.some(hj => hj.platform === jobJson.platform && hj.externalJobId === jobJson.externalJobId)) {
+        continue;
+      }
+
+      if (candidateId) {
+        const analysis = await JobAnalysisV2.findOne({
+          where: { candidateId, externalJobId: jobJson.id }
+        });
+        
+        if (analysis) {
+          jobJson.matchScore = analysis.matchScore;
+          jobJson.missingSkills = analysis.missingSkills;
+          jobJson.aiAnalysis = {
+            ...jobJson.aiAnalysis,
+            atsScore: analysis.matchScore, // Fallback if atsScore is matchScore
+            explanation: analysis.strengths
+          };
+        }
+      }
+      
+      hydratedJobs.push(jobJson);
+    }
+
+    return hydratedJobs;
   }
 
   async getSavedJobs(candidateId, filters = {}) {

@@ -16,7 +16,15 @@ import {
   getJobPredictions,
   predictJob,
   getAnalytics,
-  careerCopilotChat
+  careerCopilotChat,
+  getNetworkingContacts,
+  createNetworkingContact,
+  updateNetworkingContact,
+  deleteNetworkingContact,
+  getDailyCoachPlan,
+  updateCoachChecklist,
+  getCalendarEvents,
+  exportCalendarIcs
 } from '../controllers/v2Controller.js';
 import { protect } from '../middleware/auth.js';
 
@@ -38,6 +46,20 @@ router.delete('/recruiters/:id', deleteRecruiter);
 router.get('/recruiters/interactions', getRecruiterInteractions);
 router.post('/recruiters/interactions', createRecruiterInteraction);
 router.post('/recruiters/:id/generate-message', generateOutreachMessage);
+
+// Networking Contacts
+router.get('/networking', getNetworkingContacts);
+router.post('/networking', createNetworkingContact);
+router.put('/networking/:id', updateNetworkingContact);
+router.delete('/networking/:id', deleteNetworkingContact);
+
+// Daily AI Coach
+router.get('/coach/daily-plan', getDailyCoachPlan);
+router.post('/coach/checklist', updateCoachChecklist);
+
+// Smart Calendar
+router.get('/calendar/events', getCalendarEvents);
+router.get('/calendar/export', exportCalendarIcs);
 
 // Interview Preparation
 router.get('/interview-prep/:interviewId', getInterviewPreparation);

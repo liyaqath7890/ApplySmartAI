@@ -408,6 +408,134 @@ export class NotificationService {
   }
 
   /**
+   * Check if a job matches a candidate's explicit alerts preferences (Phase 6)
+   */
+  async shouldNotifyUserForJob(user, job) {
+    try {
+      const { CandidateProfile, SavedCompany, Skill } = await import('../routes/models/index.js');
+      const profile = await CandidateProfile.findOne({ where: { userId: user.id } });
+      if (!profile) return false;
+
+      // 1. Company Follow check
+      if (job.companyId) {
+        const followed = await SavedCompany.findOne({
+          where: { candidateProfileId: profile.id, companyId: job.companyId, isFollowing: true }
+        });
+        if (followed) return true; // Always notify if followed company
+      }
+
+      // 2. Skills Match / Score check (70% threshold)
+      if (job.matchScore && job.matchScore < 70) {
+        return false;
+      }
+
+      // 3. Location Preference check
+      if (profile.preferredCities?.length > 0 && job.city) {
+        const cityMatch = profile.preferredCities.some(c => job.city.toLowerCase().includes(c.toLowerCase()));
+        if (!cityMatch && job.workType !== 'remote') return false;
+      }
+
+      // 4. Remote Preference check
+      if (profile.remoteAvailability && job.workType) {
+        const ra = profile.remoteAvailability.toLowerCase();
+        const wt = job.workType.toLowerCase();
+        if (ra === 'remote' && wt !== 'remote') return false;
+      }
+
+      // 5. Internship Preference check
+      if (profile.internshipAvailable !== undefined && job.internship !== undefined) {
+        if (job.internship && !profile.internshipAvailable) return false;
+      }
+
+      // 6. Experience Level check
+      if (profile.experienceLevel && job.experienceLevel) {
+        const pe = profile.experienceLevel.toLowerCase();
+        const je = job.experienceLevel.toLowerCase();
+        if (pe === 'entry' && je !== 'entry' && je !== 'junior') return false;
+      }
+
+      // 7. Salary Preference check
+      if (profile.expectedSalaryMin && job.salaryMin) {
+        if (parseFloat(job.salaryMin) < parseFloat(profile.expectedSalaryMin)) return false;
+      }
+
+      return true;
+    } catch (err) {
+      logger.error(`Error in shouldNotifyUserForJob filter: ${err.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Intelligently send notification about a job to a user if filter passes (Phase 6)
+   */
+  async notifyUserAboutJob(user, job) {
+    const shouldNotify = await this.shouldNotifyUserForJob(user, job);
+    if (!shouldNotify) return { success: false, reason: 'Filter requirements not met' };
+
+    const title = `🎯 Perfect Match Found: ${job.title}`;
+    const message = `We found a new job posting from ${job.company} matching your profile! Match Score: ${job.matchScore}%`;
+    const actionUrl = `${config.cors.origin || 'http://localhost:3000'}/app/job-discovery`;
+
+    // 1. Save In-App Notification (Database)
+    try {
+      const { Notification } = await import('../routes/models/index.js');
+      await Notification.create({
+        userId: user.id,
+        type: 'job_match',
+        title,
+        message,
+        isRead: false,
+        data: { job_id: job.id, url: actionUrl }
+      });
+    } catch (dbErr) {
+      logger.error(`Failed to persist notification in DB: ${dbErr.message}`);
+    }
+
+    // 2. Real-time broadcast (Socket.IO)
+    this.sendRealtimeNotification(user.id, 'notification', {
+      title,
+      message,
+      type: 'job_match',
+      data: { url: actionUrl }
+    });
+
+    // 3. Email Notification (Nodemailer)
+    if (user.email) {
+      await this.sendEmail({
+        to: user.email,
+        subject: title,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
+            <h2 style="color: #2563eb;">🎯 New Match Alert!</h2>
+            <p>${message}</p>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 6px; margin: 16px 0;">
+              <strong>Position:</strong> ${job.title}<br>
+              <strong>Company:</strong> ${job.company}<br>
+              <strong>Location:</strong> ${job.location || 'Remote'}<br>
+              <strong>Match Score:</strong> ${job.matchScore}%
+            </div>
+            <a href="${actionUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Details</a>
+          </div>
+        `
+      });
+    }
+
+    // 4. Future Channel Extensions (Push, WhatsApp, Telegram Hooks)
+    await this.broadcastToAlternateChannels(user, { title, message, url: actionUrl });
+
+    return { success: true };
+  }
+
+  /**
+   * Broadcaster placeholder for external channels like Push, WhatsApp, Telegram
+   */
+  async broadcastToAlternateChannels(user, payload) {
+    logger.info(`[AlternateChannels] Broadcasting alert for User ${user.id} to SMS/WhatsApp/Telegram (Stubs)`);
+    // Push notifications, WhatsApp Business API, Telegram bot triggers go here
+  }
+
+  /**
    * Batch send notifications
    */
   async batchSend(notifications) {

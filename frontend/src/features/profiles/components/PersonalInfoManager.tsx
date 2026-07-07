@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, Edit2, Check } from 'lucide-react';
 import { Button } from '@/shared/components/ui';
 import { useMasterProfileStore, type PersonalInfo } from '@/store';
@@ -15,9 +15,9 @@ export const PersonalInfoManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-app-primary flex items-center gap-2">
           <User className="w-5 h-5 text-primary-600" />
           Personal Information
         </h3>
@@ -31,95 +31,95 @@ export const PersonalInfoManager: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">First Name</label>
               <input
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Last Name</label>
               <input
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
               <Mail className="w-4 h-4" /> Email
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
                 <Phone className="w-4 h-4" /> Phone
               </label>
               <input
                 type="tel"
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
                 <MapPin className="w-4 h-4" /> Location
               </label>
               <input
                 type="text"
                 value={formData.location || ''}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
               <Linkedin className="w-4 h-4" /> LinkedIn URL
             </label>
             <input
               type="url"
               value={formData.linkedInUrl || ''}
               onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
                 <Github className="w-4 h-4" /> GitHub URL
               </label>
               <input
                 type="url"
                 value={formData.githubUrl || ''}
                 onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <label className="block text-sm font-medium text-app-secondary mb-1 flex items-center gap-2">
                 <Globe className="w-4 h-4" /> Portfolio URL
               </label>
               <input
                 type="url"
                 value={formData.portfolioUrl || ''}
                 onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
@@ -187,3 +187,4 @@ export const PersonalInfoManager: React.FC = () => {
     </div>
   );
 };
+

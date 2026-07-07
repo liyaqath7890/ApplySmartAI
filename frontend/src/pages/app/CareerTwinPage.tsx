@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -56,7 +55,7 @@ const CareerTwinPage: React.FC = () => {
     const base = salaryPredictionData.prediction.median;
     return [0, 1, 2, 3, 4].map((i: number) => ({
       year: String(new Date().getFullYear() + i),
-      salary: Math.round(base * (1 + i * 0.05)), // Assuming backend will eventually return trajectory, using minimal growth for chart
+      salary: Math.round(base * (1 + i * 0.05)),
       market: Math.round(base * 1.05 * (1 + i * 0.03)),
     }));
   }, [salaryPredictionData]);
@@ -75,7 +74,7 @@ const CareerTwinPage: React.FC = () => {
 
   if (isLoading && !plan) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 bg-app-bg p-6 min-h-screen text-app-primary">
         <PageHeader title="Career Twin" subtitle="AI-powered insights to guide your career journey" icon={Sparkles} />
         <StatsGridSkeleton />
       </div>
@@ -83,13 +82,19 @@ const CareerTwinPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Career Twin" subtitle="AI-powered insights to guide your career journey" icon={Sparkles}>
+    <div className="space-y-6 animate-fade-in p-6 bg-app-bg text-app-primary min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-app-border pb-4 gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            AI Career Twin
+          </h1>
+          <p className="text-sm text-app-secondary mt-1">Autonomous career trajectory simulation and readiness analytics.</p>
+        </div>
         <Button onClick={handleRegenerate} disabled={isGenerating} className="flex items-center gap-2">
           <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
           {isGenerating ? 'Generating...' : 'Regenerate Plan'}
         </Button>
-      </PageHeader>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard title="Target Role" value={plan?.targetRole || '—'} icon={TrendingUp} description={plan?.timeline || ''} />
@@ -103,8 +108,8 @@ const CareerTwinPage: React.FC = () => {
           <button
             key={t}
             onClick={() => setActiveTimeframe(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-              activeTimeframe === t ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition duration-200 border ${
+              activeTimeframe === t ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500' : 'bg-app-card border-app-border text-app-secondary hover:bg-app-hover hover:text-app-primary'
             }`}
           >
             {t}-Day Plan
@@ -113,37 +118,37 @@ const CareerTwinPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Salary Prediction</h3>
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-app-primary mb-4">Salary Prediction</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salaryData}>
                 <defs>
                   <linearGradient id="colorSalary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="year" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" tickFormatter={(v) => `$${v / 1000}k`} />
-                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, '']} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="year" stroke="#64748b" />
+                <YAxis stroke="#64748b" tickFormatter={(v) => `$${v / 1000}k`} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '0.5rem', color: '#f1f5f9' }} formatter={(v: number) => [`$${v.toLocaleString()}`, '']} />
                 <Area type="monotone" dataKey="salary" stroke="#3b82f6" fill="url(#colorSalary)" name="Projected" />
-                <Area type="monotone" dataKey="market" stroke="#10b981" fillOpacity={0.1} fill="#10b981" name="Market" />
+                <Area type="monotone" dataKey="market" stroke="#10b981" fillOpacity={0.0} strokeDasharray="3 3" name="Market" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Skill Readiness</h3>
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-app-primary mb-4">Skill Readiness</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={skillReadinessData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="skill" stroke="#6b7280" fontSize={11} />
-                <YAxis stroke="#6b7280" domain={[0, 100]} />
-                <Tooltip formatter={(v: number) => [`${v}%`, 'Readiness']} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="skill" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" domain={[0, 100]} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '0.5rem', color: '#f1f5f9' }} formatter={(v: number) => [`${v}%`, 'Readiness']} />
                 <Bar dataKey="readiness" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -153,20 +158,20 @@ const CareerTwinPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-gradient-to-br from-purple-50 to-primary-50 rounded-xl border border-purple-200 p-6">
+          <div className="bg-gradient-to-br from-purple-950/20 to-blue-950/20 rounded-2xl border border-purple-500/20 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              <h3 className="text-xl font-bold text-gray-900">AI Career Insights</h3>
+              <Sparkles className="h-5 w-5 text-purple-400" />
+              <h3 className="text-xl font-bold text-app-primary">AI Career Insights</h3>
             </div>
             <div className="space-y-3">
               {plan?.strengths.map((s, i) => (
-                <div key={i} className="bg-white p-4 rounded-lg border border-purple-200/50">
-                  <p className="text-sm text-gray-900"><span className="font-medium text-emerald-600">Strength:</span> {s}</p>
+                <div key={i} className="bg-app-card p-4 rounded-xl border border-app-border">
+                  <p className="text-sm text-app-secondary"><span className="font-semibold text-emerald-400">Strength:</span> {s}</p>
                 </div>
               ))}
               {plan?.skillGaps.filter((g) => g.priority === 'high').map((g, i) => (
-                <div key={i} className="bg-white p-4 rounded-lg border border-purple-200/50">
-                  <p className="text-sm text-gray-900"><span className="font-medium text-amber-600">Gap:</span> Focus on {g.name} — high priority for {plan.targetRole}</p>
+                <div key={i} className="bg-app-card p-4 rounded-xl border border-app-border">
+                  <p className="text-sm text-app-secondary"><span className="font-semibold text-amber-400">Gap:</span> Focus on {g.name} — high priority for {plan.targetRole}</p>
                 </div>
               ))}
             </div>
@@ -175,32 +180,32 @@ const CareerTwinPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills Gap Analysis</h3>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-app-primary mb-4">Skills Gap Analysis</h3>
             <div className="space-y-4">
               {plan?.skillGaps.map((skill) => (
                 <div key={skill.name} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-gray-900">{skill.name}</span>
-                    <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${
-                      skill.priority === 'high' ? 'bg-red-100 text-red-700' : skill.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700'
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-medium text-app-secondary">{skill.name}</span>
+                    <span className={`font-semibold text-xs px-2.5 py-0.5 rounded-full border ${
+                      skill.priority === 'high' ? 'bg-red-500/10 text-red-400 border-red-500/20' : skill.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     }`}>{skill.priority} priority</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Path</h3>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-app-primary mb-4">Career Path</h3>
             <div className="space-y-3">
-              <div className="p-3 border border-primary-200 bg-primary-50 rounded-lg">
-                <p className="font-medium text-gray-900">{plan?.currentRole}</p>
-                <p className="text-xs text-gray-500">Current</p>
+              <div className="p-3 border border-blue-500/30 bg-blue-950/20 rounded-xl">
+                <p className="font-semibold text-app-primary">{plan?.currentRole}</p>
+                <p className="text-xs text-app-secondary mt-0.5">Current Position</p>
               </div>
-              <div className="text-center text-gray-400">↓</div>
-              <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
-                <p className="font-medium text-gray-900">{plan?.targetRole}</p>
-                <p className="text-xs text-gray-500">Target · {plan?.timeline}</p>
+              <div className="text-center text-app-secondary">↓</div>
+              <div className="p-3 border border-emerald-500/30 bg-emerald-950/20 rounded-xl">
+                <p className="font-semibold text-app-primary">{plan?.targetRole}</p>
+                <p className="text-xs text-app-secondary mt-0.5">Target · {plan?.timeline}</p>
               </div>
             </div>
           </div>

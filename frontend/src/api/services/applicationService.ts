@@ -1,23 +1,48 @@
 import axios from '../axios';
 
-export type PipelineStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'accepted' | 'rejected' | 'withdrawn';
+export type PipelineStatus =
+  | 'imported'
+  | 'resume_generated'
+  | 'cover_letter_generated'
+  | 'ready_to_apply'
+  | 'applied'
+  | 'assessment'
+  | 'interview_scheduled'
+  | 'interview_completed'
+  | 'hr_round'
+  | 'technical_round'
+  | 'final_round'
+  | 'offer'
+  | 'rejected'
+  | 'withdrawn';
 
 export interface PipelineItem {
   id: string;
   status: PipelineStatus;
   matchScore: number;
   appliedAt: string;
+  followUpDate?: string;
+  recruiter?: string;
+  salary?: string;
+  documentsUsed?: any;
   title: string;
   company: string;
   jobUrl?: string;
 }
 
 export interface PipelineData {
-  saved: PipelineItem[];
+  imported: PipelineItem[];
+  resume_generated: PipelineItem[];
+  cover_letter_generated: PipelineItem[];
+  ready_to_apply: PipelineItem[];
   applied: PipelineItem[];
-  interview: PipelineItem[];
+  assessment: PipelineItem[];
+  interview_scheduled: PipelineItem[];
+  interview_completed: PipelineItem[];
+  hr_round: PipelineItem[];
+  technical_round: PipelineItem[];
+  final_round: PipelineItem[];
   offer: PipelineItem[];
-  accepted: PipelineItem[];
   rejected: PipelineItem[];
   withdrawn: PipelineItem[];
 }
@@ -33,6 +58,10 @@ export interface Application {
   matchScore?: number;
   notes?: string;
   appliedAt?: string;
+  followUpDate?: string;
+  recruiter?: string;
+  salary?: string;
+  documentsUsed?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,6 +82,28 @@ export const applicationService = {
   // Move a card across Kanban columns
   updateStatus: async (id: string, status: PipelineStatus): Promise<{ success: boolean; data: Application }> => {
     const response = await axios.patch(`/applications/${id}/status`, { status });
+    return response.data;
+  },
+
+  // Import external job URL
+  importJob: async (jobUrl: string): Promise<{ success: boolean; message: string; data: { job: any; application: Application } }> => {
+    const response = await axios.post('/jobs/import', { jobUrl });
+    return response.data;
+  },
+
+  // Update additional tracking details
+  updateTrackingDetails: async (
+    id: string,
+    data: {
+      appliedAt?: string;
+      followUpDate?: string;
+      notes?: string;
+      recruiter?: string;
+      salary?: string;
+      documentsUsed?: any;
+    }
+  ): Promise<{ success: boolean; data: Application }> => {
+    const response = await axios.post(`/applications/${id}/track-details`, data);
     return response.data;
   },
 

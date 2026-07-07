@@ -1,2 +1,0 @@
-import{f as s}from"./index-DGPe9-gR.js";const r={analyzeSkillGaps:async a=>(await s.post("/learning/skill-gaps",{jobId:a})).data,createLearningPath:async a=>(await s.post("/learning/paths",a)).data,getLearningPaths:async()=>(await s.get("/learning/paths")).data,updateStepProgress:async(a,e)=>(await s.patch(`/learning/steps/${a}`,{isCompleted:e})).data};export{r as l};
-//# sourceMappingURL=learningService-BuE9HsXM.js.map

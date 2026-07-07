@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Calendar, MapPin, Building2 } from 'lucide-react';
 import { Button, EmptyState } from '@/shared/components/ui';
@@ -53,9 +53,9 @@ export const ExperienceManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-app-primary flex items-center gap-2">
           Work Experience
         </h2>
         <Button onClick={() => setIsAdding(!isAdding)} className="flex items-center gap-2">
@@ -65,40 +65,40 @@ export const ExperienceManager: React.FC = () => {
       </div>
 
       {isAdding && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-6 p-4 bg-app-hover rounded-lg border border-app-border">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Company Name</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Position</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.position}
                 onChange={(e) => setFormData({ ...formData, position: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Location</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Start Date</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, startDate: new Date(e.target.value) })}
               />
@@ -112,24 +112,24 @@ export const ExperienceManager: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked, endDate: e.target.checked ? undefined : formData.endDate })}
               className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
-            <label htmlFor="isCurrent" className="text-sm font-medium text-gray-700">I currently work here</label>
+            <label htmlFor="isCurrent" className="text-sm font-medium text-app-secondary">I currently work here</label>
           </div>
           {!formData.isCurrent && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">End Date</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, endDate: new Date(e.target.value) })}
               />
             </div>
           )}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-app-secondary mb-1">Description</label>
             <textarea
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Describe your roles and responsibilities..."
@@ -197,4 +197,5 @@ export const ExperienceManager: React.FC = () => {
     </div>
   );
 };
+
 

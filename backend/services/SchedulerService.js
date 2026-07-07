@@ -90,7 +90,7 @@ export class SchedulerService {
     const task = cron.schedule('0 */6 * * *', async () => {
       logger.info('[CRON-6h] Running company career page sync');
       await this._enqueueJobSync({
-        providers: ['greenhouse', 'lever', 'ashby', 'usajobs'],
+        providers: ['greenhouse', 'lever', 'ashby', 'teamtailor', 'smartrecruiters', 'usajobs'],
         label: 'company-sync-6h',
       });
     }, { timezone: 'UTC' });

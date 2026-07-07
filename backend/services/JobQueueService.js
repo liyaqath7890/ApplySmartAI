@@ -359,6 +359,53 @@ export class JobQueueService {
       }
     });
 
+    // Retry Queue (Phase 7)
+    this.queues.retryQueue = new Queue('retry-queue', {
+      connection: this.connection,
+      defaultJobOptions: {
+        removeOnComplete: 100,
+        removeOnFail: 1000,
+        attempts: 5,
+        backoff: {
+          type: 'exponential',
+          delay: 15000
+        }
+      }
+    });
+
+    // Dead Letter Queue (Phase 7)
+    this.queues.deadLetterQueue = new Queue('dead-letter-queue', {
+      connection: this.connection,
+      defaultJobOptions: {
+        removeOnComplete: 500,
+        removeOnFail: 5000
+      }
+    });
+
+    // Provider Health Queue (Phase 7)
+    this.queues.providerHealthQueue = new Queue('provider-health-queue', {
+      connection: this.connection,
+      defaultJobOptions: {
+        removeOnComplete: 50,
+        removeOnFail: 100,
+        attempts: 1
+      }
+    });
+
+    // Priority Queue (Phase 7)
+    this.queues.priorityQueue = new Queue('priority-queue', {
+      connection: this.connection,
+      defaultJobOptions: {
+        removeOnComplete: 100,
+        removeOnFail: 200,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 3000
+        }
+      }
+    });
+
     logger.info(`Initialized ${Object.keys(this.queues).length} job queues`);
   }
 
@@ -385,10 +432,12 @@ export class JobQueueService {
     }
   }
 
-  /**
-   * Create workers for processing jobs
-   */
   createWorkers(processors) {
+    if (!this.initialized || !this.connection) {
+      logger.warn('Skipping worker registration because Queue Service is not initialized (Redis is offline)');
+      return;
+    }
+
     // Job aggregation worker
     if (processors.jobAggregation) {
       this.workers.jobAggregation = new Worker(
@@ -690,7 +739,7 @@ export class JobQueueService {
   }
 
   /**
-   * Dispatch job alerts to all users following a company
+   * Dispatch job alerts to all users following or bookmarking a company
    */
   async dispatchCompanyJobAlerts(company, jobs) {
     if (!this.initialized || !this.queues.notifications || !jobs || jobs.length === 0) {
@@ -699,10 +748,14 @@ export class JobQueueService {
 
     try {
       // Dynamic import to avoid circular dependency
-      const { SavedCompany, CandidateProfile, User } = await import('../routes/models/index.js');
+      const { SavedCompany, CandidateProfile, User, Notification } = await import('../routes/models/index.js');
+      const { Op } = await import('sequelize');
       
       const followers = await SavedCompany.findAll({
-        where: { companyId: company.id, isFollowing: true },
+        where: { 
+          companyId: company.id,
+          [Op.or]: [{ isFollowing: true }, { isBookmarked: true }]
+        },
         include: [{ 
           model: CandidateProfile, 
           as: 'candidateProfile',
@@ -710,28 +763,118 @@ export class JobQueueService {
         }]
       });
 
-      logger.info(`Dispatching company job alert for ${company.name} to ${followers.length} followers`);
+      logger.info(`Dispatching company job alert for ${company.name} to ${followers.length} candidates`);
 
       const jobsQueued = [];
+      
       for (const follower of followers) {
         if (!follower.candidateProfile || !follower.candidateProfile.user) continue;
         
         // Check notification preferences if defined
         if (follower.notificationPreferences && follower.notificationPreferences.jobAlerts === false) {
-          continue; // User opted out of job alerts for this company
+          continue; // User opted out of job alerts
         }
 
         const user = follower.candidateProfile.user;
+        const profile = follower.candidateProfile;
+        
+        // Retrieve candidate's skills
+        const candidateSkills = await user.getSkills().catch(() => []);
+        const skillNames = new Set(candidateSkills.map(s => s.name?.toLowerCase().trim()));
+
+        // Filter jobs by matching conditions
+        const matchingJobs = [];
+        for (const job of jobs) {
+          // 1. Preferred Location check
+          const preferredLocs = profile.preferredLocations || [];
+          if (preferredLocs.length > 0 && job.location) {
+            const matchedLoc = preferredLocs.some(loc => 
+              job.location.toLowerCase().includes(loc.toLowerCase().trim())
+            );
+            if (!matchedLoc) continue;
+          }
+
+          // 2. Remote Preference check
+          if (profile.isLookingForRemote && job.workType && job.workType !== 'remote') {
+            continue;
+          }
+
+          // 3. Internship Preference check
+          if (job.internship && follower.notificationPreferences?.internships === false) {
+            continue;
+          }
+
+          // 4. Experience Level check
+          if (profile.experienceLevel && job.experienceLevel) {
+            const jobLevel = job.experienceLevel.toLowerCase();
+            const profileLevel = profile.experienceLevel.toLowerCase();
+            if (jobLevel !== profileLevel) {
+              continue;
+            }
+          }
+
+          // 5. Skills Match check
+          const jobSkills = job.skills || job.requirements || [];
+          if (jobSkills.length > 0 && skillNames.size > 0) {
+            const hasSkillOverlap = jobSkills.some(skill => 
+              skillNames.has(skill.toLowerCase().trim())
+            );
+            if (!hasSkillOverlap) continue;
+          }
+
+          // Check if already notified for this job in last 24h
+          const alreadyNotified = await Notification.findOne({
+            where: {
+              userId: user.id,
+              type: 'job_match',
+              created_at: { [Op.gt]: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+              data: {
+                jobId: job.id || job.externalJobId
+              }
+            }
+          });
+
+          if (alreadyNotified) {
+            continue;
+          }
+
+          matchingJobs.push(job);
+        }
+
+        if (matchingJobs.length === 0) {
+          continue; // No jobs matched the criteria for this candidate
+        }
+
+        // Add notification job to queue
         const job = await this.queues.notifications.add('send-notification', {
           userId: user.id,
           userEmail: user.email,
           type: 'company_job_alert',
           data: {
+            title: `🏢 ${matchingJobs.length} New Job Matches at ${company.name}`,
+            message: `Hey ${user.firstName || 'there'}! ${matchingJobs.length} new jobs at ${company.name} match your preferences.`,
             company: company.toJSON ? company.toJSON() : company,
-            jobs
+            jobs: matchingJobs,
+            payload: {
+              companyId: company.id,
+              jobIds: matchingJobs.map(j => j.id || j.externalJobId)
+            }
           },
           timestamp: new Date().toISOString()
         });
+
+        // Also save to Notification table directly to prevent duplicates on immediate subsequent runs
+        await Notification.create({
+          userId: user.id,
+          type: 'job_match',
+          title: `🏢 New Job Matches at ${company.name}`,
+          content: `${matchingJobs.length} new jobs posted.`,
+          data: {
+            jobId: matchingJobs[0].id || matchingJobs[0].externalJobId,
+            jobIds: matchingJobs.map(j => j.id || j.externalJobId)
+          }
+        });
+
         jobsQueued.push(job);
       }
 

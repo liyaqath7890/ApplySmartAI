@@ -10,3 +10,42 @@
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:34:18.506Z"}
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:34:59.757Z"}
 {"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-06-30T09:35:31.320Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T13:53:04.598Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T13:55:07.369Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T13:58:54.724Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T17:00:46.530Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T17:36:31.003Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T17:44:03.317Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-04T17:44:10.698Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T04:37:06.900Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T04:59:15.061Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:00:53.960Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:01:09.786Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:01:33.529Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:13:04.455Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:14:56.012Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:15:35.425Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:21:41.550Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:22:25.140Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:29:12.126Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:29:58.925Z"}
+{"level":"error","message":"WorkdayProvider: Error fetching workday jobs for company amazon: getaddrinfo ENOTFOUND amazon.myworkdayjobs.com","service":"ai-job-agent","timestamp":"2026-07-05T05:30:03.358Z"}
+{"level":"error","message":"LeverProvider: Error fetching jobs from adobe: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:05.448Z"}
+{"level":"error","message":"GreenhouseProvider: Error fetching jobs from google: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:07.199Z"}
+{"level":"error","message":"LeverProvider: Error fetching jobs from microsoft: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:07.524Z"}
+{"level":"error","message":"AshbyProvider: Error fetching jobs from meta: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:08.114Z"}
+{"level":"error","message":"GreenhouseProvider: Error fetching jobs from nvidia: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:08.428Z"}
+{"level":"error","message":"LeverProvider: Error fetching jobs from stripe: Request failed with status code 404","service":"ai-job-agent","timestamp":"2026-07-05T05:30:08.786Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:30:13.892Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T05:52:00.704Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:01:03.029Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:01:50.173Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:34:44.222Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:35:23.797Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:36:54.655Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-05T06:37:35.164Z"}
+{"level":"error","message":"Failed to initialize job queue service: Connection is closed.","service":"ai-job-agent","timestamp":"2026-07-06T13:04:44.334Z"}
+{"level":"error","message":"Audit log creation failed: database \"ai_job_agent-test\" does not exist","service":"ai-job-agent","timestamp":"2026-07-06T13:20:40.369Z"}
+{"level":"error","message":"Audit log creation failed: database \"ai_job_agent-test\" does not exist","service":"ai-job-agent","timestamp":"2026-07-06T13:20:40.371Z"}
+{"level":"error","message":"Audit log creation failed: database \"ai_job_agent-test\" does not exist","service":"ai-job-agent","timestamp":"2026-07-06T13:20:40.372Z"}
+{"level":"error","message":"Audit log creation failed: database \"ai_job_agent-test\" does not exist","service":"ai-job-agent","timestamp":"2026-07-06T13:20:40.372Z"}

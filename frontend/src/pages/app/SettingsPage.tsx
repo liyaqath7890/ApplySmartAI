@@ -41,24 +41,24 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-app-primary">
       <PageHeader title="Settings" subtitle="Manage your account and preferences" icon={Settings} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="glass-card p-4">
             <nav className="space-y-1">
               {SECTIONS.map((item) => {
                 const Icon = item.icon;
                 if (item.id === 'billing') {
                   return (
-                    <Link key={item.id} to="/app/billing" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                    <Link key={item.id} to="/app/billing" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-app-secondary hover:bg-app-hover hover:text-app-primary transition-colors">
                       <Icon className="h-5 w-5" /><span>{item.title}</span>
                     </Link>
                   );
                 }
                 return (
-                  <button key={item.id} onClick={() => setActiveSection(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeSection === item.id ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+                  <button key={item.id} onClick={() => setActiveSection(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeSection === item.id ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'text-app-secondary hover:bg-app-hover hover:text-app-primary'}`}>
                     <Icon className="h-5 w-5" /><span>{item.title}</span>
                   </button>
                 );
@@ -69,22 +69,22 @@ export default function SettingsPage() {
 
         <div className="lg:col-span-2 space-y-6">
           {activeSection === 'account' && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-app-primary mb-4">Account Settings</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input type="text" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                    <label className="block text-sm font-medium text-app-secondary mb-1">First Name</label>
+                    <input type="text" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-primary focus:ring-2 focus:ring-primary-500 focus:outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input type="text" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                    <label className="block text-sm font-medium text-app-secondary mb-1">Last Name</label>
+                    <input type="text" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-primary focus:ring-2 focus:ring-primary-500 focus:outline-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-medium text-app-secondary mb-1">Email</label>
+                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-lg text-app-primary focus:ring-2 focus:ring-primary-500 focus:outline-none" />
                 </div>
               </div>
               <div className="mt-6"><Button onClick={handleSave}>Save Changes</Button></div>
@@ -92,15 +92,15 @@ export default function SettingsPage() {
           )}
 
           {activeSection === 'notifications' && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h3>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-app-primary mb-4">Notifications</h3>
               <div className="space-y-4">
                 {[
                   { label: 'Email Notifications', desc: 'Receive updates via email', enabled: emailNotifications, toggle: () => setEmailNotifications(!emailNotifications) },
                   { label: 'Push Notifications', desc: 'Receive push notifications', enabled: pushNotifications, toggle: () => setPushNotifications(!pushNotifications) },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
-                    <div><div className="font-medium text-gray-900">{item.label}</div><div className="text-sm text-gray-600">{item.desc}</div></div>
+                    <div><div className="font-medium text-app-primary">{item.label}</div><div className="text-sm text-app-secondary">{item.desc}</div></div>
                     <Toggle enabled={item.enabled} onChange={item.toggle} />
                   </div>
                 ))}
@@ -109,19 +109,19 @@ export default function SettingsPage() {
           )}
 
           {activeSection === 'appearance' && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Appearance</h3>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-app-primary mb-4">Appearance</h3>
               <div className="flex items-center justify-between">
-                <div><div className="font-medium text-gray-900">Dark Mode</div><div className="text-sm text-gray-600">Toggle dark theme</div></div>
+                <div><div className="font-medium text-app-primary">Dark Mode</div><div className="text-sm text-app-secondary">Toggle dark theme</div></div>
                 <Toggle enabled={darkMode} onChange={toggleDarkMode} />
               </div>
             </div>
           )}
 
           {(activeSection === 'career' || activeSection === 'jobs' || activeSection === 'security') && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 capitalize">{activeSection.replace('-', ' ')} Settings</h3>
-              <p className="text-sm text-gray-600 mb-4">Configure your {activeSection} preferences below.</p>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-app-primary mb-4 capitalize">{activeSection.replace('-', ' ')} Settings</h3>
+              <p className="text-sm text-app-secondary mb-4">Configure your {activeSection} preferences below.</p>
               <Link to="/app/master-profile"><Button variant="outline">Edit Master Profile</Button></Link>
             </div>
           )}

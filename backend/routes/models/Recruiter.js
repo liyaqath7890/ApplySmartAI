@@ -44,6 +44,32 @@ const Recruiter = sequelize.define('Recruiter', {
     type: DataTypes.ENUM('active', 'inactive', 'engaged'),
     defaultValue: 'active'
   },
+  priority: {
+    type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
+    defaultValue: 'medium'
+  },
+  followUpDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  companyId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'Company',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
+  applicationId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'Application',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
@@ -62,7 +88,9 @@ const Recruiter = sequelize.define('Recruiter', {
     { fields: ['candidate_id'] },
     { fields: ['company'] },
     { fields: ['type'] },
-    { fields: ['status'] }
+    { fields: ['status'] },
+    { fields: ['priority'] },
+    { fields: ['follow_up_date'] }
   ]
 });
 

@@ -102,6 +102,25 @@ export const syncDatabase = async (force = false) => {
   try {
     await sequelize.sync({ force });
     console.log('✅ Database synchronized successfully.');
+
+    // Custom migration to alter Application table status and add new columns
+    try {
+      await sequelize.query('ALTER TABLE "Application" ALTER COLUMN status TYPE VARCHAR(255);');
+      await sequelize.query(`ALTER TABLE "Application" ALTER COLUMN status SET DEFAULT 'imported';`);
+      await sequelize.query('ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS follow_up_date TIMESTAMP WITH TIME ZONE;');
+      await sequelize.query('ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS recruiter VARCHAR(255);');
+      await sequelize.query('ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS salary VARCHAR(255);');
+      await sequelize.query(`ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS documents_used JSONB DEFAULT '{}'::jsonb;`);
+      
+      // Recruiter CRM column alerts
+      await sequelize.query('ALTER TABLE "Recruiter" ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT \'medium\';');
+      await sequelize.query('ALTER TABLE "Recruiter" ADD COLUMN IF NOT EXISTS follow_up_date TIMESTAMP WITH TIME ZONE;');
+      await sequelize.query('ALTER TABLE "Recruiter" ADD COLUMN IF NOT EXISTS company_id UUID;');
+      await sequelize.query('ALTER TABLE "Recruiter" ADD COLUMN IF NOT EXISTS application_id UUID;');
+      console.log('✅ Database custom migrations executed successfully.');
+    } catch (err) {
+      console.warn('⚠️ Custom migrations skipped or failed:', err.message);
+    }
   } catch (error) {
     console.error('❌ Database synchronization failed:', error);
     throw error;

@@ -17,6 +17,8 @@ import {
   BookOpen,
   GraduationCap,
   CreditCard,
+  Activity,
+  Zap,
 } from 'lucide-react';
 
 const DashboardPage = lazy(() => import('@/pages/app/DashboardPage'));
@@ -38,6 +40,12 @@ const SavedCompaniesPage = lazy(() => import('@/pages/app/SavedCompaniesPage'));
 const LearningPathPage = lazy(() => import('@/pages/app/LearningPathPage'));
 const SkillGapPage = lazy(() => import('@/pages/app/SkillGapPage'));
 const AppBillingPage = lazy(() => import('@/pages/app/AppBillingPage'));
+const OperationsDashboardPage = lazy(() => import('@/pages/app/OperationsDashboardPage'));
+const ApplicationWorkspacePage = lazy(() => import('@/pages/app/ApplicationWorkspacePage'));
+const CoachPage = lazy(() => import('@/pages/app/CoachPage'));
+const NetworkingPage = lazy(() => import('@/pages/app/NetworkingPage'));
+const CalendarPage = lazy(() => import('@/pages/app/CalendarPage'));
+const BrowserProductivityPage = lazy(() => import('@/pages/app/BrowserProductivityPage'));
 
 export interface AppRoute {
   path: string;
@@ -51,6 +59,7 @@ export const appRoutes: AppRoute[] = [
   { path: 'master-profile', element: <MasterProfilePage />, title: 'Master Profile', icon: User },
   { path: 'job-discovery', element: <JobDiscoveryPage />, title: 'Job Discovery', icon: Briefcase },
   { path: 'job-pipeline', element: <JobPipelinePage />, title: 'Job Pipeline', icon: FolderKanban },
+  { path: 'applications/:id/workspace', element: <ApplicationWorkspacePage />, title: 'Application Workspace', icon: Sparkles },
   { path: 'resume-ai', element: <ResumeAIPage />, title: 'Resume AI', icon: FileText },
   { path: 'cover-letter-ai', element: <CoverLetterAIPage />, title: 'Cover Letter AI', icon: MessageSquare },
   { path: 'interview-preparation', element: <InterviewPrepPage />, title: 'Interview Preparation', icon: Calendar },
@@ -64,6 +73,11 @@ export const appRoutes: AppRoute[] = [
   { path: 'companies/saved', element: <SavedCompaniesPage />, title: 'Saved Companies', icon: Building2 },
   { path: 'learning-path', element: <LearningPathPage />, title: 'Learning Path', icon: BookOpen },
   { path: 'skill-gap', element: <SkillGapPage />, title: 'Skill Gap Analysis', icon: GraduationCap },
+  { path: 'operations', element: <OperationsDashboardPage />, title: 'Operations Dashboard', icon: Activity },
   { path: 'billing', element: <AppBillingPage />, title: 'Billing', icon: CreditCard },
   { path: 'settings', element: <SettingsPage />, title: 'Settings', icon: Settings },
+  { path: 'coach', element: <CoachPage />, title: 'Daily Coach', icon: Sparkles },
+  { path: 'networking', element: <NetworkingPage />, title: 'Networking Workspace', icon: Share2 },
+  { path: 'calendar', element: <CalendarPage />, title: 'Smart Calendar', icon: Calendar },
+  { path: 'productivity', element: <BrowserProductivityPage />, title: 'Browser Productivity', icon: Zap },
 ];

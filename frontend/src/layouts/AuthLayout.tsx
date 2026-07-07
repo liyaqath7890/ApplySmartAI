@@ -14,7 +14,7 @@ export default function AuthLayout() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-app-card rounded-2xl shadow-xl p-8">
           <Outlet />
         </div>
 

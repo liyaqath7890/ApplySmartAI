@@ -10,6 +10,9 @@ import {
   getVersions,
   analyzeResume,
   tailorResume,
+  revertVersion,
+  deleteVersion,
+  compareVersions,
   upload
 } from '../controllers/resumeController.js';
 
@@ -27,6 +30,11 @@ router.patch('/:id/primary', setPrimary);
 router.get('/:id/versions', getVersions);
 router.post('/analyze', analyzeResume);
 router.post('/tailor', tailorResume);
+
+// Version specific actions
+router.post('/versions/:versionId/revert', revertVersion);
+router.delete('/versions/:versionId', deleteVersion);
+router.get('/versions/compare/:v1/:v2', compareVersions);
 
 // Templates
 router.get('/templates', getResumeTemplates);

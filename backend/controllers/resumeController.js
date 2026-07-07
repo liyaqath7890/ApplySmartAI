@@ -340,4 +340,42 @@ export const tailorResume = async (req, res) => {
   }
 };
 
+// Revert to a previous version
+export const revertVersion = async (req, res) => {
+  try {
+    const { versionId } = req.params;
+    const candidateId = req.user.id;
+    const version = await ResumeVersioningService.revertToVersion(versionId, candidateId);
+    res.json({ success: true, version });
+  } catch (error) {
+    console.error('Revert version error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Delete a specific version
+export const deleteVersion = async (req, res) => {
+  try {
+    const { versionId } = req.params;
+    const candidateId = req.user.id;
+    const result = await ResumeVersioningService.deleteVersion(versionId, candidateId);
+    res.json({ success: true, message: 'Version deleted successfully', result });
+  } catch (error) {
+    console.error('Delete version error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Compare two resume versions
+export const compareVersions = async (req, res) => {
+  try {
+    const { v1, v2 } = req.params;
+    const comparison = await ResumeVersioningService.compareVersions(v1, v2);
+    res.json({ success: true, comparison });
+  } catch (error) {
+    console.error('Compare versions error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export { upload };

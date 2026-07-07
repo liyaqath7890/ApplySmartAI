@@ -6,6 +6,7 @@ import {
   downloadPackageFiles,
   getPipeline,
   saveJob,
+  updateTrackingDetails,
 } from '../controllers/applicationTrackingController.js';
 
 const router = express.Router();
@@ -21,6 +22,9 @@ router.post('/save', saveJob);
 
 // Status transitions
 router.patch('/:id/status', updateStatus);
+
+// Tracking details update
+router.post('/:id/track-details', updateTrackingDetails);
 
 // Application package helpers
 router.get('/packages/:id/apply-url', getApplicationUrl);

@@ -22,21 +22,13 @@ import logger from '../utils/logger.js';
 
 // ── Valid application status transitions ──────────────────────────────────────
 
-const VALID_TRANSITIONS = {
-  pending:       ['saved', 'applied', 'withdrawn'],
-  saved:         ['applied', 'withdrawn'],
-  applied:       ['interview', 'rejected', 'withdrawn'],
-  interview:     ['offer', 'rejected', 'withdrawn'],
-  offer:         ['accepted', 'rejected', 'withdrawn'],
-  accepted:      ['withdrawn'],
-  rejected:      [],
-  withdrawn:     [],
-  // Legacy statuses from Application model
-  viewed:        ['shortlisted', 'rejected'],
-  shortlisted:   ['interviewing', 'rejected'],
-  interviewing:  ['offered', 'rejected'],
-  offered:       ['accepted', 'rejected'],
-};
+const ALL_STAGES = [
+  'imported', 'resume_generated', 'cover_letter_generated', 'ready_to_apply',
+  'applied', 'assessment', 'interview_scheduled', 'interview_completed',
+  'hr_round', 'technical_round', 'final_round', 'offer', 'rejected', 'withdrawn',
+  // legacy support
+  'pending', 'saved', 'viewed', 'shortlisted', 'interviewing', 'offered', 'accepted'
+];
 
 /**
  * Update application status with validation and audit logging.
@@ -44,7 +36,7 @@ const VALID_TRANSITIONS = {
  */
 export const updateStatus = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const { status, notes, interviewDate, offerDetails } = req.body;
+  const { status, notes } = req.body;
 
   const application = await Application.findOne({
     where: { id, candidateId: req.user.id },
@@ -54,13 +46,9 @@ export const updateStatus = catchAsync(async (req, res, next) => {
     return next(new AppError('Application not found', 404));
   }
 
-  // Validate transition
-  const allowedTransitions = VALID_TRANSITIONS[application.status] || [];
-  if (status !== application.status && !allowedTransitions.includes(status)) {
-    return next(new AppError(
-      `Invalid status transition: ${application.status} → ${status}. Allowed: ${allowedTransitions.join(', ')}`,
-      400
-    ));
+  // Validate status
+  if (!ALL_STAGES.includes(status)) {
+    return next(new AppError(`Invalid status: ${status}`, 400));
   }
 
   const previousStatus = application.status;
@@ -69,8 +57,9 @@ export const updateStatus = catchAsync(async (req, res, next) => {
   if (notes) updateData.recruiterNotes = notes;
 
   // Set timestamp fields
-  if (status === 'viewed'       && !application.viewedAt)      updateData.viewedAt = new Date();
-  if (['shortlisted', 'interviewing', 'rejected', 'offered'].includes(status) && !application.respondedAt) {
+  if (status === 'applied' && !application.appliedAt) updateData.appliedAt = new Date();
+  if (status === 'viewed' && !application.viewedAt) updateData.viewedAt = new Date();
+  if (['rejected', 'offer', 'offered'].includes(status) && !application.respondedAt) {
     updateData.respondedAt = new Date();
   }
 
@@ -212,24 +201,45 @@ export const getPipeline = catchAsync(async (req, res) => {
     order: [['appliedAt', 'DESC']],
   });
 
-  // Group by status
+// Group by status
   const pipeline = {
-    saved:       [],
-    applied:     [],
-    interview:   [],
-    offer:       [],
-    accepted:    [],
-    rejected:    [],
-    withdrawn:   [],
+    imported: [],
+    resume_generated: [],
+    cover_letter_generated: [],
+    ready_to_apply: [],
+    applied: [],
+    assessment: [],
+    interview_scheduled: [],
+    interview_completed: [],
+    hr_round: [],
+    technical_round: [],
+    final_round: [],
+    offer: [],
+    rejected: [],
+    withdrawn: []
+  };
+
+  const normalizeStatus = (status) => {
+    const s = status ? status.toLowerCase() : 'imported';
+    if (s === 'pending' || s === 'saved' || s === 'viewed') return 'imported';
+    if (s === 'shortlisted') return 'ready_to_apply';
+    if (s === 'interviewing') return 'interview_scheduled';
+    if (s === 'offered' || s === 'accepted') return 'offer';
+    return s;
   };
 
   for (const app of applications) {
-    const bucket = pipeline[app.status] || pipeline.applied;
+    const norm = normalizeStatus(app.status);
+    const bucket = pipeline[norm] || pipeline.imported;
     bucket.push({
       id:        app.id,
-      status:    app.status,
+      status:    norm,
       matchScore: app.matchScore,
       appliedAt: app.appliedAt,
+      followUpDate: app.followUpDate,
+      recruiter: app.recruiter,
+      salary: app.salary,
+      documentsUsed: app.documentsUsed,
       title:     app.externalJob?.title || app.job?.title || 'Unknown Position',
       company:   app.externalJob?.company || 'Unknown Company',
       jobUrl:    app.externalJob?.jobUrl,
@@ -272,9 +282,42 @@ export const saveJob = catchAsync(async (req, res, next) => {
     candidateId,
     externalJobId: externalJobId || null,
     jobId:         jobId || null,
-    status:        'saved',
+    status:        'imported',
     appliedAt:     new Date(),
   });
 
   res.status(201).json({ success: true, data: application });
+});
+
+/**
+ * Update custom application tracking details
+ * POST /api/applications/:id/track-details
+ */
+export const updateTrackingDetails = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { appliedAt, followUpDate, notes, recruiter, salary, documentsUsed } = req.body;
+
+  const application = await Application.findOne({
+    where: { id, candidateId: req.user.id }
+  });
+
+  if (!application) {
+    return next(new AppError('Application not found', 404));
+  }
+
+  const updateData = {};
+  if (appliedAt) updateData.appliedAt = new Date(appliedAt);
+  if (followUpDate) updateData.followUpDate = new Date(followUpDate);
+  if (notes !== undefined) updateData.recruiterNotes = notes;
+  if (recruiter !== undefined) updateData.recruiter = recruiter;
+  if (salary !== undefined) updateData.salary = salary;
+  if (documentsUsed !== undefined) updateData.documentsUsed = documentsUsed;
+
+  await application.update(updateData);
+
+  res.status(200).json({
+    success: true,
+    message: 'Application tracking details updated successfully',
+    data: application
+  });
 });

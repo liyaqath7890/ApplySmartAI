@@ -185,6 +185,104 @@ router.get('/metrics/audit', protect, requirePermission('admin:audit'), async (r
   }
 });
 
+// ── Observability Dashboard ──────────────────────────────────────────────────
+
+router.get('/metrics/dashboard', protect, requirePermission('admin:metrics'), async (req, res) => {
+  try {
+    const { Company, ExternalJob, Notification } = await import('./models/index.js');
+    const { Op } = await import('sequelize');
+
+    // 1. Company Statistics & Sync Status & Provider Health
+    const companies = await Company.findAll();
+    const totalCompanies = companies.length;
+    const activeCompanies = companies.filter(c => c.activeStatus).length;
+    
+    const hiringStatusBreakdown = {
+      activelyHiring: companies.filter(c => c.hiringStatus === 'Actively Hiring').length,
+      hiringFreeze: companies.filter(c => c.hiringStatus === 'Hiring Freeze').length,
+      unknown: companies.filter(c => c.hiringStatus === 'Unknown').length
+    };
+
+    const syncStatus = {
+      idle: companies.filter(c => c.schedulerStatus === 'idle').length,
+      syncing: companies.filter(c => c.schedulerStatus === 'syncing').length,
+      failed: companies.filter(c => c.schedulerStatus === 'failed').length,
+      queued: companies.filter(c => c.schedulerStatus === 'queued').length
+    };
+
+    const providerHealth = {};
+    const providers = ['greenhouse', 'lever', 'ashby', 'teamtailor', 'smartrecruiters'];
+    for (const prov of providers) {
+      const provCompanies = companies.filter(c => c.atsPlatform === prov);
+      const healthy = provCompanies.every(c => c.schedulerStatus !== 'failed');
+      const failedSyncs = provCompanies.reduce((acc, c) => acc + (c.failedSyncCount || 0), 0);
+      const totalJobs = provCompanies.reduce((acc, c) => acc + (c.activeJobs || 0), 0);
+      providerHealth[prov] = {
+        configuredCompanies: provCompanies.length,
+        status: provCompanies.length === 0 ? 'inactive' : healthy ? 'healthy' : 'degraded',
+        failedSyncs,
+        totalJobs
+      };
+    }
+
+    // 2. Job Statistics
+    const totalJobs = await ExternalJob.count();
+    const activeJobs = await ExternalJob.count({ where: { isExpired: false } });
+    const expiredJobs = await ExternalJob.count({ where: { isExpired: true } });
+    
+    // Group by platform
+    const platformBreakdown = {};
+    const platformCounts = await ExternalJob.findAll({
+      attributes: ['platform', [ExternalJob.sequelize.fn('COUNT', ExternalJob.sequelize.col('platform')), 'count']],
+      group: ['platform']
+    });
+    for (const pc of platformCounts) {
+      platformBreakdown[pc.platform] = parseInt(pc.dataValues.count);
+    }
+
+    // 3. Queue Status
+    const queueStats = JobQueueService.initialized 
+      ? await JobQueueService.getQueueStats()
+      : { initialized: false };
+
+    // 4. Notifications Delivery
+    const totalNotifications = await Notification.count();
+    const readNotifications = await Notification.count({ where: { isRead: true } });
+    const unreadNotifications = totalNotifications - readNotifications;
+    const deliveryRatio = totalNotifications > 0 ? (readNotifications / totalNotifications).toFixed(2) : 1.0;
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      dashboard: {
+        providerHealth,
+        syncStatus: {
+          totalCompanies,
+          activeCompanies,
+          syncStatus,
+          hiringStatusBreakdown
+        },
+        jobs: {
+          totalJobs,
+          activeJobs,
+          expiredJobs,
+          platformBreakdown
+        },
+        queues: queueStats,
+        notifications: {
+          total: totalNotifications,
+          read: readNotifications,
+          unread: unreadNotifications,
+          deliveryRatio
+        }
+      }
+    });
+  } catch (err) {
+    logger.error(`Dashboard metrics endpoint error: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function toMB(bytes) {

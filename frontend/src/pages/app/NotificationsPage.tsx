@@ -64,10 +64,10 @@ const NotificationsPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader title="Notifications" subtitle={`${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`} icon={Bell} />
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between bg-white p-4 rounded-xl border border-gray-200">
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between bg-app-card p-4 rounded-xl border border-app-border">
         <div className="flex items-center gap-2 overflow-x-auto">
           {(['all', 'unread', 'application', 'interview', 'job_match', 'system'] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filter === f ? 'bg-primary-100 text-primary-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${filter === f ? 'bg-blue-500/10 text-blue-500' : 'text-app-secondary hover:bg-app-hover'}`}>
               {f.charAt(0).toUpperCase() + f.slice(1).replace('_', ' ')}
             </button>
           ))}
@@ -77,13 +77,13 @@ const NotificationsPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : filteredNotifications.length === 0 ? (
           <div className="p-8"><EmptyState icon={Bell} title="No notifications" description={`No ${filter !== 'all' ? filter.replace('_', ' ') : ''} notifications found`} /></div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-app-border">
             {filteredNotifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((notification) => (
               <div key={notification.id} onClick={() => handleMarkRead(notification.id)}>
                 <NotificationItem notification={notification} />

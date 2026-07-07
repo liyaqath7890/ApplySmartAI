@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader, Button } from '@/shared/components/ui';
-import { Sparkles, FileText, Download, Save, RefreshCw, Plus, Trash2, CheckCircle2, Copy } from 'lucide-react';
+import { Sparkles, FileText, Download, Save, RefreshCw, Trash2, CheckCircle2, Copy } from 'lucide-react';
 import { useCoverLetterAIStore } from '@/store';
 import { coverLetterService, CoverLetter } from '@/api/services/coverLetterService';
-
-
 
 export default function CoverLetterAIPage() {
   const { setCurrentCoverLetter, setGenerating } = useCoverLetterAIStore();
@@ -16,7 +14,11 @@ export default function CoverLetterAIPage() {
   const [tone, setTone] = useState('Professional');
   const [content, setContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [templateType, setTemplateType] = useState('Standard');
+  const [keywordInput, setKeywordInput] = useState('');
+  const [refineFeedback, setRefineFeedback] = useState('');
   const queryClient = useQueryClient();
+  
   const { data: savedLettersData } = useQuery({
     queryKey: ['coverLetters'],
     queryFn: () => coverLetterService.getCoverLetters(),
@@ -39,6 +41,8 @@ export default function CoverLetterAIPage() {
       const res = await coverLetterService.generateCoverLetter({
         jobData: { title: role, company, description },
         tone,
+        templateType,
+        customPrompt: keywordInput ? `Strictly incorporate these keywords: ${keywordInput}` : '',
       });
       const letter = res.coverLetter.content;
       setContent(letter);
@@ -103,26 +107,33 @@ export default function CoverLetterAIPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Cover Letter AI" subtitle="Generate personalized cover letters in seconds" icon={FileText} />
+    <div className="space-y-6 animate-fade-in p-6 bg-app-bg text-app-primary min-h-screen">
+      <div className="flex justify-between items-center border-b border-app-border pb-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            Cover Letter Builder
+          </h1>
+          <p className="text-sm text-app-secondary mt-1">Design target-centric letters powered by AI matching guidelines.</p>
+        </div>
+      </div>
 
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm font-medium">
+        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-semibold">
           <CheckCircle2 className="h-4 w-4" />{successMsg}
         </div>
       )}
 
       {/* View Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-0">
+      <div className="flex gap-2 border-b border-app-border pb-0">
         {(['create', 'saved'] as const).map(v => (
           <button
             key={v}
             onClick={() => setActiveView(v)}
-            className={`px-4 py-2.5 text-sm font-medium capitalize border-b-2 transition-colors ${
-              activeView === v ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-600 hover:text-gray-900'
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+              activeView === v ? 'border-blue-500 text-blue-400' : 'border-transparent text-app-secondary hover:text-app-primary'
             }`}
           >
-            {v === 'create' ? 'Create New' : v.charAt(0).toUpperCase() + v.slice(1)}
+            {v === 'create' ? 'Create New' : 'Saved Letters'}
             {v === 'saved' && ` (${savedLetters.length})`}
           </button>
         ))}
@@ -132,37 +143,37 @@ export default function CoverLetterAIPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Panel */}
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary-600" /> Job Details
+            <div className="glass-card p-5">
+              <h3 className="font-semibold text-app-primary mb-4 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-455" /> Job Details
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Company Name *</label>
                   <input
                     type="text"
                     value={company}
                     onChange={e => setCompany(e.target.value)}
-                    placeholder="e.g. TechCorp Inc."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g. Stripe"
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role / Job Title *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Role / Job Title *</label>
                   <input
                     type="text"
                     value={role}
                     onChange={e => setRole(e.target.value)}
-                    placeholder="e.g. Senior Frontend Engineer"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g. Staff Product Designer"
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Tone</label>
                   <select
                     value={tone}
                     onChange={e => setTone(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm"
                   >
                     <option>Professional</option>
                     <option>Enthusiastic</option>
@@ -171,13 +182,35 @@ export default function CoverLetterAIPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Description (optional)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Template Format</label>
+                  <select
+                    value={templateType}
+                    onChange={e => setTemplateType(e.target.value)}
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm"
+                  >
+                    <option value="Standard">Standard Business</option>
+                    <option value="Creative">Creative / Narrative</option>
+                    <option value="Executive">Executive / Metric-focused</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Focus Keywords (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={keywordInput}
+                    onChange={e => setKeywordInput(e.target.value)}
+                    placeholder="e.g. React, Docker, Kubernetes"
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-app-secondary mb-1.5">Job Description (optional)</label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="Paste job description for better tailoring..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                    placeholder="Paste full description to auto-tailor keywords..."
+                    className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-app-primary placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-sm resize-none"
                   />
                 </div>
                 <Button
@@ -190,40 +223,71 @@ export default function CoverLetterAIPage() {
                 </Button>
               </div>
             </div>
-
-
           </div>
 
           {/* Editor Panel */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">
+          <div className="lg:col-span-2 glass-card overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-app-border">
+              <h3 className="font-semibold text-app-primary text-sm">
                 {content ? `${company || 'New'} — ${role || 'Cover Letter'}` : 'Cover Letter Editor'}
               </h3>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!content} className="flex items-center gap-1">
-                  <Copy className="h-4 w-4" /> Copy
+                <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!content} className="text-blue-400 hover:text-blue-300">
+                  Copy
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleSave} disabled={!content} className="flex items-center gap-1">
-                  <Save className="h-4 w-4" /> Save
-                </Button>
-                <Button variant="ghost" size="sm" disabled={!content} className="flex items-center gap-1">
-                  <Download className="h-4 w-4" /> Export
+                <Button variant="ghost" size="sm" onClick={handleSave} disabled={!content} className="text-blue-450 hover:text-blue-355">
+                  Save
                 </Button>
               </div>
             </div>
             {content ? (
-              <textarea
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                className="w-full h-[560px] px-6 py-5 text-sm text-gray-800 font-serif leading-relaxed focus:outline-none resize-none"
-                style={{ fontFamily: 'Georgia, serif' }}
-              />
+              <>
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  className="w-full h-[480px] px-6 py-5 bg-app-bg text-sm text-app-primary font-sans leading-relaxed focus:outline-none resize-none border-b border-app-border"
+                />
+                <div className="p-4 bg-slate-900/30 flex flex-col md:flex-row gap-3 items-center">
+                  <div className="flex-1 w-full">
+                    <input
+                      type="text"
+                      placeholder="Ask AI to refine letter (e.g., 'Make it sound more professional', 'Improve grammar')"
+                      value={refineFeedback}
+                      onChange={e => setRefineFeedback(e.target.value)}
+                      className="w-full px-3 py-2 bg-app-bg border border-app-border rounded-xl text-xs text-app-primary focus:outline-none"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={isGenerating || !refineFeedback.trim()}
+                    onClick={async () => {
+                      setIsGenerating(true);
+                      try {
+                        const res = await coverLetterService.generateCoverLetter({
+                          jobData: { title: role, company, description },
+                          tone,
+                          templateType,
+                          feedback: `Apply change request: ${refineFeedback}. Current cover letter draft: ${content}`
+                        });
+                        setContent(res.coverLetter.content);
+                        setRefineFeedback('');
+                        toast.success('Cover letter draft refined!');
+                      } catch (err) {
+                        toast.error('Refinement optimization failed');
+                      } finally {
+                        setIsGenerating(false);
+                      }
+                    }}
+                  >
+                    Refine with AI
+                  </Button>
+                </div>
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center h-[560px] text-center p-8">
-                <FileText className="h-16 w-16 text-gray-200 mb-4" />
-                <p className="text-gray-500 font-medium mb-1">Your cover letter will appear here</p>
-                <p className="text-sm text-gray-400">Fill in the job details and click "Generate with AI"</p>
+                <FileText className="h-16 w-16 text-app-secondary mb-4 animate-pulse" />
+                <p className="text-app-primary font-semibold mb-1">Your cover letter will appear here</p>
+                <p className="text-sm text-app-secondary">Fill in the job details and click "Generate with AI"</p>
               </div>
             )}
           </div>
@@ -231,37 +295,34 @@ export default function CoverLetterAIPage() {
       )}
 
       {activeView === 'saved' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="glass-card overflow-hidden">
           {savedLetters.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <FileText className="h-12 w-12 text-gray-200 mb-3" />
-              <p className="text-gray-500">No saved cover letters yet</p>
+              <FileText className="h-12 w-12 text-app-secondary mb-3" />
+              <p className="text-app-secondary font-semibold">No saved cover letters yet</p>
               <Button className="mt-4" onClick={() => setActiveView('create')}>Create One</Button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-app-border">
               {savedLetters.map(letter => (
-                <div key={letter.id} className="flex items-center justify-between p-5 hover:bg-gray-50">
+                <div key={letter.id} className="flex items-center justify-between p-5 hover:bg-app-hover transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-primary-50 rounded-lg">
-                      <FileText className="h-5 w-5 text-primary-600" />
+                    <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                      <FileText className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{letter.title}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-semibold text-app-primary">{letter.title}</p>
+                      <p className="text-xs text-app-secondary">
                         {new Date(letter.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleLoadSaved(letter)}>Edit</Button>
-                    <Button variant="ghost" size="sm">
-                      <Download className="h-4 w-4" />
-                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-500 hover:bg-red-50"
+                      className="text-red-400 hover:bg-red-950/20"
                       onClick={() => handleDeleteLetter(letter.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -273,8 +334,6 @@ export default function CoverLetterAIPage() {
           )}
         </div>
       )}
-
-
     </div>
   );
 }

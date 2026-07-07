@@ -1,0 +1,2 @@
+{"level":"info","message":"Shutting down job queue service...","service":"ai-job-agent","timestamp":"2026-07-04T13:52:32.683Z"}
+{"level":"info","message":"Job queue service shut down","service":"ai-job-agent","timestamp":"2026-07-04T13:52:32.694Z"}

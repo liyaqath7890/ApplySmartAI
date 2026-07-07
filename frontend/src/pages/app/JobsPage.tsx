@@ -80,16 +80,16 @@ export default function JobsPage() {
       </PageHeader>
 
       {/* Search and Filters Toggle */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="glass-card p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-app-secondary" />
             <input
               type="text"
               placeholder="Search jobs by title, company, or keywords..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-3 bg-app-bg border border-app-border text-app-primary placeholder-slate-450 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <Button
@@ -104,24 +104,24 @@ export default function JobsPage() {
 
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mt-6 pt-6 border-t border-app-border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+              <label className="block text-sm font-medium text-app-secondary mb-2">Location</label>
               <input
                 type="text"
                 placeholder="City, state, or remote"
                 value={filters.location}
                 onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
+              <label className="block text-sm font-medium text-app-secondary mb-2">Employment Type</label>
               <select
                 value={filters.employmentType}
                 onChange={(e) => setFilters({ ...filters, employmentType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Types</option>
                 {employmentTypes.map((type) => (
@@ -131,11 +131,11 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+              <label className="block text-sm font-medium text-app-secondary mb-2">Experience Level</label>
               <select
                 value={filters.experienceLevel}
                 onChange={(e) => setFilters({ ...filters, experienceLevel: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Levels</option>
                 {experienceLevels.map((level) => (
@@ -145,11 +145,11 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Work Type</label>
+              <label className="block text-sm font-medium text-app-secondary mb-2">Work Type</label>
               <select
                 value={filters.workType}
                 onChange={(e) => setFilters({ ...filters, workType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All</option>
                 {workTypes.map((type) => (
@@ -159,7 +159,7 @@ export default function JobsPage() {
             </div>
 
             <div className="lg:col-span-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-app-secondary mb-2">
                 Salary Range (USD/year)
               </label>
               <div className="flex items-center gap-4">
@@ -168,15 +168,15 @@ export default function JobsPage() {
                   placeholder="Min"
                   value={filters.salaryMin}
                   onChange={(e) => setFilters({ ...filters, salaryMin: Number(e.target.value) })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-app-secondary">-</span>
                 <input
                   type="number"
                   placeholder="Max"
                   value={filters.salaryMax}
                   onChange={(e) => setFilters({ ...filters, salaryMax: Number(e.target.value) })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-3 py-2 bg-app-bg border border-app-border text-app-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -213,18 +213,18 @@ export default function JobsPage() {
         <div className="space-y-4">
           {data.jobs.map((job) => {
             const isSaved = savedJobIds.includes(job.id);
-            const matchScore = 85; // Mock score for now
+            const matchScore = job.aiScore || 85;
             return (
               <div
                 key={job.id}
-                className="bg-white rounded-xl border border-gray-200 p-6 hover:border-primary-300 transition-colors"
+                className="glass-card p-6 hover:border-primary-300 transition-colors"
               >
                 <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                   {/* Left: Job Info */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
+                        <h3 className="text-xl font-semibold text-app-primary">{job.title}</h3>
                         <p className="text-primary-600 font-medium">{job.company}</p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export default function JobsPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-600">
+                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-app-secondary">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
                         {job.location}
@@ -254,7 +254,7 @@ export default function JobsPage() {
                       {job.requirements?.slice(0, 3).map((skill, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                          className="px-3 py-1 bg-app-hover text-app-secondary border border-app-border rounded-full text-sm"
                         >
                           {skill}
                         </span>

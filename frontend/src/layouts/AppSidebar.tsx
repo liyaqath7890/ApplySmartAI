@@ -21,6 +21,7 @@ import {
   Building2,
   Share2,
   CreditCard,
+  Zap,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -40,6 +41,8 @@ const navSections: NavSection[] = [
     title: 'Overview',
     items: [
       { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
+      { name: 'Daily Coach', href: '/app/coach', icon: Sparkles },
+      { name: 'Smart Calendar', href: '/app/calendar', icon: Calendar },
     ],
   },
   {
@@ -56,13 +59,14 @@ const navSections: NavSection[] = [
     items: [
       { name: 'Job Discovery', href: '/app/job-discovery', icon: Briefcase },
       { name: 'Job Pipeline', href: '/app/job-pipeline', icon: FolderKanban },
+      { name: 'Browser Productivity', href: '/app/productivity', icon: Zap },
     ],
   },
   {
     title: 'Network',
     items: [
       { name: 'Recruiters', href: '/app/recruiters', icon: Users },
-      { name: 'Referrals', href: '/app/referrals', icon: Share2 },
+      { name: 'Networking', href: '/app/networking', icon: Share2 },
       { name: 'Companies', href: '/app/companies', icon: Building2 },
     ],
   },
@@ -103,14 +107,14 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
   const { user } = useAuthStore();
 
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+    <div className="flex h-full flex-col bg-app-card border-r border-app-border">
       {/* Logo */}
-      <div className="flex h-16 items-center px-4 border-b border-gray-200">
+      <div className="flex h-16 items-center px-4 border-b border-app-border">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-primary-600 rounded-lg">
+          <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900">CareerOS</span>
+          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">CareerOS</span>
         </div>
       </div>
 
@@ -118,7 +122,7 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
       <div className="flex-1 overflow-y-auto py-4 px-3">
         {navSections.map((section) => (
           <div key={section.title} className="mb-6">
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <h3 className="px-3 text-xs font-semibold text-app-secondary uppercase tracking-wider mb-2">
               {section.title}
             </h3>
             <ul className="space-y-1">
@@ -130,15 +134,15 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
                     className={({ isActive }) =>
                       `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                         isActive
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-blue-500/10 text-blue-400 border-l border-blue-500'
+                          : 'text-app-secondary hover:bg-app-hover hover:text-app-primary'
                       }`
                     }
                   >
                     <item.icon className="h-5 w-5 flex-shrink-0" />
                     <span className="flex-1">{item.name}</span>
                     {location.pathname.startsWith(item.href) && item.href !== '/app/dashboard' && (
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <ChevronRight className="h-4 w-4 text-app-secondary" />
                     )}
                   </NavLink>
                 </li>
@@ -149,7 +153,7 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
       </div>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-gray-200 py-4 px-3">
+      <div className="border-t border-app-border py-4 px-3">
         <ul className="space-y-1">
           {bottomNavItems.map((item) => (
             <li key={item.name}>
@@ -159,8 +163,8 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
                 className={({ isActive }) =>
                   `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-blue-500/10 text-blue-400 border-l border-blue-500'
+                      : 'text-app-secondary hover:bg-app-hover hover:text-app-primary'
                   }`
                 }
               >
@@ -173,17 +177,17 @@ export default function AppSidebar({ isMobileOpen, onMobileClose }: AppSidebarPr
 
         {/* User Profile */}
         <div className="mt-4 px-3">
-          <div className="flex items-center gap-3 px-3 py-3 bg-gray-50 rounded-lg">
-            <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-base font-semibold text-primary-700">
+          <div className="flex items-center gap-3 px-3 py-3 bg-app-bg border border-app-border rounded-xl">
+            <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+              <span className="text-base font-semibold text-blue-400">
                 {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || ''}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-app-primary truncate">
                 {user?.firstName || 'User'} {user?.lastName || ''}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-slate-500 truncate">
                 {user?.email || 'user@example.com'}
               </p>
             </div>

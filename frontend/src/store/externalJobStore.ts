@@ -64,7 +64,7 @@ export const useExternalJobStore = create<ExternalJobState>((set, get) => ({
   selectedJob: null,
   isLoading: false,
 
-  fetchJobs: async (platforms = ['linkedin', 'indeed']) => {
+  fetchJobs: async (platforms = ['greenhouse', 'lever', 'ashby', 'teamtailor', 'smartrecruiters', 'linkedin', 'indeed']) => {
     set({ isLoading: true });
     try {
       // Build filter payload
@@ -84,7 +84,7 @@ export const useExternalJobStore = create<ExternalJobState>((set, get) => ({
         salary: j.salary || 'Competitive',
         salaryMin: j.salaryMin || 0,
         salaryMax: j.salaryMax || 0,
-        skills: j.requirements || [],
+        skills: j.skills || j.requirements || [],
         experience: j.experienceLevel || 'Mid',
         jobType: j.employmentType || 'Full-time',
         category: 'Engineering',

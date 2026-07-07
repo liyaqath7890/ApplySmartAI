@@ -88,4 +88,19 @@ export const resumeService = {
     const response = await axios.post('/resumes/tailor', { resumeId, jobDescription });
     return response.data;
   },
+
+  revertVersion: async (versionId: string): Promise<{ success: boolean; version: ResumeVersion }> => {
+    const response = await axios.post(`/resumes/versions/${versionId}/revert`);
+    return response.data;
+  },
+
+  deleteVersion: async (versionId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await axios.delete(`/resumes/versions/${versionId}`);
+    return response.data;
+  },
+
+  compareVersions: async (v1: string, v2: string): Promise<{ success: boolean; comparison: any }> => {
+    const response = await axios.get(`/resumes/versions/compare/${v1}/${v2}`);
+    return response.data;
+  }
 };

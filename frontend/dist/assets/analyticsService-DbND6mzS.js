@@ -1,2 +1,0 @@
-import{f as s}from"./index-DGPe9-gR.js";const n={getDashboardStats:async()=>(await s.get("/analytics/dashboard")).data,getSalaryPrediction:async a=>(await s.get("/analytics/salary-prediction",{params:a})).data,getMarketDemand:async a=>(await s.get("/analytics/market-demand",{params:{skill:a}})).data,getSkillTrends:async()=>(await s.get("/analytics/skill-trends")).data};export{n as a};
-//# sourceMappingURL=analyticsService-DbND6mzS.js.map

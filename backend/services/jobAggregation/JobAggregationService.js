@@ -1,10 +1,16 @@
 import {
   AdzunaProvider, JSearchProvider, ArbeitnowProvider, RemoteOKProvider,
   RemotiveProvider, USAJobsProvider, WellfoundProvider, GreenhouseProvider, LeverProvider,
-  AshbyProvider, RSSFeedProvider
+  AshbyProvider, RSSFeedProvider, TeamtailorProvider, SmartRecruitersProvider,
+  WorkdayProvider, OracleProvider, SAPSuccessFactorsProvider, DarwinboxProvider,
+  iCIMSProvider, TaleoProvider, WorkableProvider, RecruiteeProvider,
+  BambooHRProvider, JobviteProvider, JazzHRProvider, PersonioProvider,
+  BreezyHRProvider, FountainProvider, PinpointProvider, ComeetProvider,
+  ZohoRecruitProvider, RipplingProvider
 } from './providers/index.js';
 import { ExternalJob, User, CandidateProfile, Skill } from '../../routes/models/index.js';
 import CandidateIntelligenceService from '../CandidateIntelligenceService.js';
+import CompanyDiscoveryEngine from './CompanyDiscoveryEngine.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -27,6 +33,26 @@ export class JobAggregationService {
       greenhouse: new GreenhouseProvider({}),
       lever: new LeverProvider({}),
       ashby: new AshbyProvider({}),
+      teamtailor: new TeamtailorProvider({}),
+      smartrecruiters: new SmartRecruitersProvider({}),
+      workday: new WorkdayProvider({}),
+      oracle: new OracleProvider({}),
+      sap: new SAPSuccessFactorsProvider({}),
+      darwinbox: new DarwinboxProvider({}),
+      icims: new iCIMSProvider({}),
+      taleo: new TaleoProvider({}),
+      workable: new WorkableProvider({}),
+      recruitee: new RecruiteeProvider({}),
+      bamboohr: new BambooHRProvider({}),
+      jobvite: new JobviteProvider({}),
+      jazzhr: new JazzHRProvider({}),
+      personio: new PersonioProvider({}),
+      breezyhr: new BreezyHRProvider({}),
+      fountain: new FountainProvider({}),
+      pinpoint: new PinpointProvider({}),
+      comeet: new ComeetProvider({}),
+      zohorecruit: new ZohoRecruitProvider({}),
+      rippling: new RipplingProvider({}),
       
       // RSS Feed Aggregator
       rss: new RSSFeedProvider({})
@@ -42,12 +68,14 @@ export class JobAggregationService {
    */
   async aggregateJobs(candidateId, searchParams = {}) {
     try {
-      const candidate = await User.findByPk(candidateId, {
-        include: [
-          { model: CandidateProfile, as: 'candidateProfile' },
-          { model: Skill, as: 'skills' }
-        ]
-      });
+      const candidate = candidateId
+        ? await User.findByPk(candidateId, {
+            include: [
+              { model: CandidateProfile, as: 'candidateProfile' },
+              { model: Skill, as: 'skills' }
+            ]
+          })
+        : null;
 
       const allJobs = [];
       const providersToUse = searchParams.providers || Object.keys(this.providers);
@@ -170,7 +198,7 @@ export class JobAggregationService {
   }
 
   /**
-   * Save jobs to the database
+   * Save jobs to the database and sync with Company profiles
    */
   async saveJobs(jobs, candidate) {
     const savedJobs = [];
@@ -181,6 +209,59 @@ export class JobAggregationService {
       
       const batchPromises = batch.map(async (job) => {
         try {
+          // 1. Find or create Company record
+          let company = null;
+          if (job.company && job.company !== 'Confidential') {
+            const { Company } = await import('../../routes/models/index.js');
+            const { Op } = await import('sequelize');
+            
+            const normalizedName = job.company.trim();
+            company = await Company.findOne({
+              where: {
+                name: { [Op.iLike]: normalizedName }
+              }
+            });
+            
+            if (!company) {
+              company = await CompanyDiscoveryEngine.discoverCompanyFromJob(job);
+              if (!company) {
+                const externalCompanyId = job.raw?.companyName || job.company.toLowerCase().trim().replace(/[^a-zA-Z0-9]/g, '-').substring(0, 100);
+                company = await Company.create({
+                  name: normalizedName,
+                  atsPlatform: job.platform || 'manual',
+                  externalCompanyId: externalCompanyId,
+                  activeStatus: true,
+                  verificationStatus: 'pending',
+                  hiringStatus: 'Actively Hiring',
+                  technologiesUsed: job.skills || [],
+                  hiringLocations: job.location ? [job.location] : []
+                });
+                logger.info(`Pipeline: Automatically created new Company "${company.name}"`);
+              }
+            } else {
+              // Update existing company stats
+              const currentTech = company.technologiesUsed || [];
+              const newTech = job.skills || [];
+              const updatedTech = Array.from(new Set([...currentTech, ...newTech])).slice(0, 50);
+              
+              const currentLocs = company.hiringLocations || [];
+              const newLoc = job.location;
+              const updatedLocations = Array.from(new Set([...currentLocs, newLoc])).filter(Boolean).slice(0, 20);
+              
+              await company.update({
+                hiringStatus: 'Actively Hiring',
+                technologiesUsed: updatedTech,
+                hiringLocations: updatedLocations
+              });
+            }
+          }
+
+          // Link job to company
+          if (company) {
+            job.companyId = company.id;
+            job.atsPlatform = job.platform;
+          }
+
           const [savedJob, created] = await ExternalJob.findOrCreate({
             where: {
               platform: job.platform,
@@ -192,25 +273,33 @@ export class JobAggregationService {
             }
           });
 
-          if (created && candidate) {
-            try {
-              const matchData = await CandidateIntelligenceService.matchCandidateToJob(
-                job.candidateId, 
-                savedJob.id, 
-                true
-              );
-              
-              await savedJob.update({
-                matchScore: matchData.matchResponse?.matchPercentage || 0,
-                missingSkills: matchData.matchResponse?.missingSkills || [],
-                aiAnalysis: { 
-                  explanation: matchData.matchResponse?.strengths,
-                  matchDetails: matchData.matchResponse
-                }
-              });
-            } catch (matchError) {
-              logger.error(`Error calculating match score for job ${savedJob.id}: ${matchError.message}`);
+          // Generate embeddings if embeddingService is available
+          try {
+            const { default: embeddingService } = await import('../embeddingService.js');
+            if (embeddingService && typeof embeddingService.generateJobEmbedding === 'function') {
+              await embeddingService.generateJobEmbedding(savedJob.id, `${savedJob.title} ${savedJob.description || ''}`);
             }
+          } catch (embedErr) {
+            logger.warn(`Failed to generate embedding for job ${savedJob.id}: ${embedErr.message}`);
+          }
+
+          // Update company active job counts
+          if (company) {
+            const activeJobCount = await ExternalJob.count({
+              where: { companyId: company.id, isExpired: false }
+            });
+            await company.update({
+              activeJobs: activeJobCount,
+              jobCount: (company.jobCount || 0) + (created ? 1 : 0)
+            });
+          }
+
+          // Run the AI Job Processing Pipeline (Phase 4 & 5)
+          try {
+            const { default: aiPipeline } = await import('../AIJobProcessingPipeline.js');
+            await aiPipeline.processJob(savedJob, candidate);
+          } catch (pipelineErr) {
+            logger.error(`Error running AI Job Processing Pipeline for job ${savedJob.id}: ${pipelineErr.message}`);
           }
 
           savedJobs.push(savedJob);
@@ -242,7 +331,7 @@ export class JobAggregationService {
    */
   getProviderType(providerName) {
     const apiProviders = ['adzuna', 'jsearch', 'arbeitnow', 'remoteok', 'remotive', 'usajobs', 'wellfound'];
-    const careerPageProviders = ['greenhouse', 'lever', 'ashby'];
+    const careerPageProviders = ['greenhouse', 'lever', 'ashby', 'teamtailor', 'smartrecruiters'];
     const feedProviders = ['rss'];
 
     if (apiProviders.includes(providerName)) return 'api';

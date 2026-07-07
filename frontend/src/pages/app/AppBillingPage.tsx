@@ -69,17 +69,17 @@ export default function AppBillingPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => (
-          <div key={plan.id} className={`border rounded-xl p-6 bg-white ${plan.isPopular ? 'border-primary-600 shadow-lg ring-2 ring-primary-100' : 'border-gray-200'}`}>
+          <div key={plan.id} className={`border rounded-xl p-6 bg-app-card ${plan.isPopular ? 'border-blue-500 shadow-lg ring-2 ring-blue-500/20' : 'border-app-border'}`}>
             {plan.isPopular && <div className="bg-primary-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">Most Popular</div>}
             <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-            <p className="text-gray-600 mb-4 text-sm">{plan.description}</p>
+            <p className="text-app-secondary mb-4 text-sm">{plan.description}</p>
             <div className="mb-4">
               <span className="text-4xl font-bold">${plan.price}</span>
-              <span className="text-gray-600">/{plan.billingPeriod}</span>
+              <span className="text-app-secondary">/{plan.billingPeriod}</span>
             </div>
             <ul className="space-y-2 mb-6">
               {plan.features?.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                <li key={i} className="flex items-center gap-2 text-sm text-app-primary">
                   <span className="text-emerald-500">✓</span>{String(feature)}
                 </li>
               ))}

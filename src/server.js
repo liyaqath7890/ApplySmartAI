@@ -39,6 +39,7 @@ import applicationOrchestratorRoutes from '../backend/routes/applicationOrchestr
 import v2Routes from '../backend/routes/v2Routes.js';
 import advancedCandidateIntelligenceRoutes from '../backend/routes/advancedCandidateIntelligenceRoutes.js';
 import jobAggregationRoutes from '../backend/routes/jobAggregationRoutes.js';
+import workspaceRoutes from '../backend/routes/workspaceRoutes.js';
 
 // Import routes — new infrastructure
 import metricsRoutes               from '../backend/routes/metricsRoutes.js';
@@ -123,6 +124,7 @@ app.use('/api/application-orchestrator',      applicationOrchestratorRoutes);
 app.use('/api/v2',                            v2Routes);
 app.use('/api/advanced-candidate-intelligence', advancedCandidateIntelligenceRoutes);
 app.use('/api/job-aggregation',               jobAggregationRoutes);
+app.use('/api/workspace',                     workspaceRoutes);
 
 // ── New Infrastructure Routes ─────────────────────────────────────────────────
 app.use('/api',                               metricsRoutes);           // /api/metrics, /api/health/*
@@ -257,7 +259,9 @@ process.on('SIGTERM', async () => {
 });
 
 // Start the server
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 export { app, httpServer, io };
 export default app;

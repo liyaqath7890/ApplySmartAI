@@ -53,5 +53,18 @@ export const interviewService = {
   submitAnswer: async (sessionId: string, questionId: string, answer: string): Promise<{ question: InterviewQuestion; feedback: any; nextQuestion?: InterviewQuestion }> => {
     const response = await axios.post(`/interviews/sessions/${sessionId}/questions/${questionId}/answer`, { answer });
     return response.data;
+  },
+
+  getWeakAreas: async (): Promise<{
+    success: boolean;
+    weakAreas: Array<{ topic: string; score: number; description: string; frequency: number }>;
+    strengths: Array<{ topic: string; score: number; description: string }>;
+    recommendations: Array<{ priority: 'high' | 'medium' | 'low'; action: string; resource: string }>;
+    overallTrend: string;
+    nextSteps: string[];
+    message?: string;
+  }> => {
+    const response = await axios.get('/interviews/weak-areas');
+    return response.data;
   }
 };

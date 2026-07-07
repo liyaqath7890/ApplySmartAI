@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Calendar, BookOpen, GraduationCap } from 'lucide-react';
 import { Button, EmptyState } from '@/shared/components/ui';
@@ -50,9 +50,9 @@ export const EducationManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-app-card rounded-xl border border-app-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-app-primary flex items-center gap-2">
           Education
         </h2>
         <Button onClick={() => setIsAdding(!isAdding)} className="flex items-center gap-2">
@@ -62,50 +62,50 @@ export const EducationManager: React.FC = () => {
       </div>
 
       {isAdding && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-6 p-4 bg-app-hover rounded-lg border border-app-border">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">School</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.school}
                 onChange={(e) => setFormData({ ...formData, school: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Degree</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.degree}
                 onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study</label>
+              <label className="block text-sm font-medium text-app-secondary mb-1">Field of Study</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 value={formData.fieldOfStudy}
                 onChange={(e) => setFormData({ ...formData, fieldOfStudy: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <label className="block text-sm font-medium text-app-secondary mb-1">Start Date</label>
                 <input
                   type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => setFormData({ ...formData, startDate: new Date(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <label className="block text-sm font-medium text-app-secondary mb-1">End Date</label>
                 <input
                   type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => setFormData({ ...formData, endDate: new Date(e.target.value) })}
                 />
@@ -113,10 +113,10 @@ export const EducationManager: React.FC = () => {
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-app-secondary mb-1">Description</label>
             <textarea
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-primary focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Relevant coursework, honors, activities..."
@@ -178,4 +178,5 @@ export const EducationManager: React.FC = () => {
     </div>
   );
 };
+
 

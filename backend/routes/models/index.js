@@ -51,6 +51,8 @@ import InterviewPrepV2 from './InterviewPrepV2.js';
 import ApplicationPackage from './ApplicationPackage.js';
 import Company from './Company.js';
 import SavedCompany from './SavedCompany.js';
+import NetworkingContact from './NetworkingContact.js';
+import CoachReport from './CoachReport.js';
 
 
 // User associations
@@ -285,6 +287,21 @@ CandidateProfile.belongsToMany(Company, { through: SavedCompany, as: 'savedCompa
 Company.hasMany(ExternalJob, { foreignKey: 'companyId', as: 'externalJobs' });
 ExternalJob.belongsTo(Company, { foreignKey: 'companyId', as: 'companyDetails' });
 
+// Networking Contact associations
+User.hasMany(NetworkingContact, { foreignKey: 'candidateId', as: 'networkingContacts' });
+NetworkingContact.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
+
+// Coach Report associations
+User.hasMany(CoachReport, { foreignKey: 'candidateId', as: 'coachReports' });
+CoachReport.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
+
+// Recruiter additional associations
+Recruiter.belongsTo(Company, { foreignKey: 'companyId', as: 'companyDetails' });
+Company.hasMany(Recruiter, { foreignKey: 'companyId', as: 'recruiters' });
+
+Recruiter.belongsTo(Application, { foreignKey: 'applicationId', as: 'linkedApplication' });
+Application.hasMany(Recruiter, { foreignKey: 'applicationId', as: 'recruiters' });
+
 // Export all models
 export {
   sequelize,
@@ -340,7 +357,9 @@ export {
   InterviewPrepV2,
   ApplicationPackage,
   Company,
-  SavedCompany
+  SavedCompany,
+  NetworkingContact,
+  CoachReport
 };
 
 export default {
@@ -397,5 +416,7 @@ export default {
   InterviewPrepV2,
   ApplicationPackage,
   Company,
-  SavedCompany
+  SavedCompany,
+  NetworkingContact,
+  CoachReport
 };

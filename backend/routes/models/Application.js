@@ -61,8 +61,8 @@ const Application = sequelize.define('Application', {
     allowNull: true
   },
   status: {
-    type: DataTypes.ENUM('pending', 'viewed', 'shortlisted', 'rejected', 'interviewing', 'offered', 'accepted', 'withdrawn'),
-    defaultValue: 'pending'
+    type: DataTypes.STRING,
+    defaultValue: 'imported'
   },
   matchScore: {
     type: DataTypes.INTEGER,
@@ -114,6 +114,22 @@ const Application = sequelize.define('Application', {
   platform: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  followUpDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  recruiter: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  salary: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  documentsUsed: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
   }
 }, {
   underscored: true,

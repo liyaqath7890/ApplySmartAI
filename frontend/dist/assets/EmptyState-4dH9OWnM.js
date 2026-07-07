@@ -1,0 +1,2 @@
+import{j as e}from"./index-Bc4z_VIO.js";function r({icon:x,title:a,description:t,action:s}){return e.jsxs("div",{className:"flex flex-col items-center justify-center py-16 px-4 text-center",children:[e.jsx("div",{className:"p-6 bg-gray-100 rounded-full mb-6",children:e.jsx(x,{className:"h-12 w-12 text-gray-400"})}),e.jsx("h3",{className:"text-lg font-semibold text-gray-900 mb-2",children:a}),t&&e.jsx("p",{className:"text-sm text-gray-600 mb-6 max-w-sm",children:t}),s&&s]})}export{r as E};
+//# sourceMappingURL=EmptyState-4dH9OWnM.js.map
