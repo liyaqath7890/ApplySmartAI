@@ -19,7 +19,9 @@ export default function RecruitersPage() {
 
   const [outreachModalOpen, setOutreachModalOpen] = useState(false);
   const [outreachLoading, setOutreachLoading] = useState(false);
-  const [outreachMessage, setOutreachMessage] = useState<any>(null);
+  const [outreachMessage, setOutreachMessage] = useState<{ subject: string; content: string } | null>(null);
+  const [outreachChannel, setOutreachChannel] = useState<'email' | 'linkedin'>('email');
+  const [activeRecruiterForOutreach, setActiveRecruiterForOutreach] = useState<any>(null);
 
   useEffect(() => {
     fetchRecruiters();
@@ -83,9 +85,9 @@ export default function RecruitersPage() {
     }
   };
 
-  const handleGenerateOutreach = async (rec: any) => {
-    setOutreachMessage(null);
-    setSelectedRecruiter(rec);
+  const handleGenerateOutreach = async (rec: any, channel = 'email') => {
+    setActiveRecruiterForOutreach(rec);
+    setOutreachChannel(channel as any);
     setOutreachModalOpen(true);
     setOutreachLoading(true);
 
@@ -94,7 +96,8 @@ export default function RecruitersPage() {
       const targetRole = rec.linkedApplication?.jobTitle || 'Software Engineer';
       const res = await axios.post(`/v2/recruiters/${rec.id}/generate-message`, {
         recruiterId: rec.id,
-        role: targetRole
+        role: targetRole,
+        channel
       });
       if (res.data.success) {
         setOutreachMessage(res.data.message);
@@ -348,24 +351,45 @@ export default function RecruitersPage() {
       {outreachModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOutreachModalOpen(false)} />
-          <div className="relative w-full max-w-lg bg-app-card border border-app-border rounded-xl shadow-2xl p-6 animate-slide-up">
+          <div className="relative w-full max-w-lg bg-app-card border border-app-border rounded-xl shadow-2xl p-6 overflow-hidden animate-slide-up">
             <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-1.5"><Sparkles className="h-5 w-5 text-blue-400" /> AI Outreach Generator</h3>
+            
+            {/* Channel Toggle */}
+            <div className="flex gap-2 mb-4 bg-app-bg border border-app-border rounded-xl p-1">
+              <button
+                type="button"
+                onClick={() => handleGenerateOutreach(activeRecruiterForOutreach, 'email')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${outreachChannel === 'email' ? 'bg-blue-600 text-white' : 'text-app-secondary hover:text-slate-200'}`}
+              >
+                Email Template
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGenerateOutreach(activeRecruiterForOutreach, 'linkedin')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${outreachChannel === 'linkedin' ? 'bg-blue-600 text-white' : 'text-app-secondary hover:text-slate-200'}`}
+              >
+                LinkedIn Message
+              </button>
+            </div>
+
             {outreachLoading ? (
               <div className="py-8 text-center space-y-3">
-                <Plus className="h-8 w-8 text-blue-400 animate-spin mx-auto" />
+                <div className="h-8 w-8 text-blue-400 animate-spin mx-auto border-4 border-blue-500/20 border-t-blue-500 rounded-full" />
                 <p className="text-xs text-app-secondary">Generating personalized connection message...</p>
               </div>
             ) : outreachMessage ? (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-app-secondary mb-1">Subject</label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={outreachMessage.subject}
-                    className="w-full px-3 py-2 border border-app-border rounded-lg text-xs bg-slate-900/50 text-slate-350 focus:outline-none"
-                  />
-                </div>
+                {outreachChannel === 'email' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-app-secondary mb-1">Subject</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={outreachMessage.subject}
+                      className="w-full px-3 py-2 border border-app-border rounded-lg text-xs bg-slate-900/50 text-slate-350 focus:outline-none"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-app-secondary mb-1">Message Content</label>
                   <textarea

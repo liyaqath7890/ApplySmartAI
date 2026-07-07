@@ -1,0 +1,2 @@
+import{k as s}from"./index-BeS2czu0.js";const r={analyzeSkillGaps:async a=>(await s.post("/learning/skill-gaps",{jobId:a})).data,getSkillGaps:async()=>(await s.get("/learning/skill-gaps")).data,createLearningPath:async a=>(await s.post("/learning/paths",a)).data,getLearningPaths:async()=>(await s.get("/learning/paths")).data,updateStepProgress:async(a,e)=>(await s.patch(`/learning/steps/${a}`,{isCompleted:e})).data};export{r as l};
+//# sourceMappingURL=learningService-C0xDtKDl.js.map

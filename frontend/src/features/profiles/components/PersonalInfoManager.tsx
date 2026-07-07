@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Linkedin, Github, Globe, Edit2, Check } from 'lucide-react';
 import { Button } from '@/shared/components/ui';
 import { useMasterProfileStore, type PersonalInfo } from '@/store';
@@ -7,6 +7,10 @@ export const PersonalInfoManager: React.FC = () => {
   const { personalInfo, setPersonalInfo } = useMasterProfileStore();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<PersonalInfo>(personalInfo);
+
+  useEffect(() => {
+    setFormData(personalInfo);
+  }, [personalInfo]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

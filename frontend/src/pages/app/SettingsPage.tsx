@@ -22,6 +22,10 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('account');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaStep, setMfaStep] = useState<'disabled' | 'setup' | 'enabled'>('disabled');
+  const [otpCode, setOtpCode] = useState('');
+
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -32,6 +36,17 @@ export default function SettingsPage() {
   const handleSave = () => {
     updateUser({ firstName: form.firstName, lastName: form.lastName, email: form.email });
     toast.success('Settings saved successfully!');
+  };
+
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length === 6) {
+      setMfaStep('enabled');
+      setMfaEnabled(true);
+      toast.success('Multi-Factor Authentication enabled successfully!');
+    } else {
+      toast.error('Invalid verification code. Please enter 6 digits.');
+    }
   };
 
   const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
@@ -118,7 +133,98 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {(activeSection === 'career' || activeSection === 'jobs' || activeSection === 'security') && (
+          {activeSection === 'security' && (
+            <div className="space-y-6">
+              {/* MFA Card */}
+              <div className="glass-card p-6 bg-app-card border border-app-border rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">Multi-Factor Authentication (MFA)</h3>
+                <p className="text-xs text-app-secondary mb-4 leading-relaxed">
+                  Add an extra layer of security to your account by configuring a 6-digit one-time password code from Google Authenticator.
+                </p>
+
+                {mfaStep === 'disabled' && (
+                  <Button variant="primary" onClick={() => setMfaStep('setup')}>Configure Authenticator App</Button>
+                )}
+
+                {mfaStep === 'setup' && (
+                  <div className="p-4 border border-app-border rounded-xl bg-slate-900/30 space-y-4 animate-slide-up">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                      <div className="w-32 h-32 bg-white p-2 rounded-lg flex items-center justify-center border border-gray-300">
+                        <div className="w-28 h-28 bg-[repeating-conic-gradient(#000_0_25%,#fff_0_50%)] bg-[size:10px_10px]" title="Mock QR code authenticator setup" />
+                      </div>
+                      <div className="space-y-1.5 flex-1">
+                        <h4 className="font-semibold text-xs text-slate-250 uppercase tracking-wider">Step 1: Scan QR Code</h4>
+                        <p className="text-xs text-app-secondary">Scan this code using Google Authenticator or Authy, or enter key: <code className="text-blue-450 font-bold bg-slate-950 px-1 py-0.5 rounded text-[10px]">OSMFA SECURE KEY</code></p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleVerifyOtp} className="border-t border-app-border pt-4 space-y-3">
+                      <h4 className="font-semibold text-xs text-slate-200 uppercase tracking-wider">Step 2: Enter Verification Code</h4>
+                      <div className="flex gap-2 max-w-xs">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="e.g. 123456"
+                          value={otpCode}
+                          onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                          className="w-full px-3 py-1.5 border border-app-border rounded-lg bg-app-bg text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <Button size="sm" type="submit">Verify Code</Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {mfaStep === 'enabled' && (
+                  <div className="p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-xl text-xs text-slate-200 flex justify-between items-center animate-slide-up">
+                    <div>
+                      <p className="font-semibold text-emerald-450">✓ Google Authenticator MFA Active</p>
+                      <p className="text-app-secondary mt-0.5">Secure logins enabled via 2FA verification.</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="hover:text-red-500" onClick={() => {
+                      setMfaStep('disabled');
+                      setMfaEnabled(false);
+                      setOtpCode('');
+                      toast.success('MFA disabled');
+                    }}>Disable MFA</Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Login Session History List */}
+              <div className="glass-card p-6 bg-app-card border border-app-border rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-200 mb-4">Device Login History</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-app-border text-app-secondary font-semibold">
+                        <th className="pb-3">Device / Browser</th>
+                        <th className="pb-3">Location</th>
+                        <th className="pb-3">Last Access</th>
+                        <th className="pb-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-app-border text-slate-350">
+                      <tr>
+                        <td className="py-3 font-semibold text-slate-200">Chrome (Windows)</td>
+                        <td className="py-3">California, USA</td>
+                        <td className="py-3">Just now</td>
+                        <td className="py-3 text-emerald-450 font-bold">Active</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3">Authy Client (Mobile)</td>
+                        <td className="py-3">California, USA</td>
+                        <td className="py-3">2 hours ago</td>
+                        <td className="py-3 text-app-secondary">Logged Out</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(activeSection === 'career' || activeSection === 'jobs') && (
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-app-primary mb-4 capitalize">{activeSection.replace('-', ' ')} Settings</h3>
               <p className="text-sm text-app-secondary mb-4">Configure your {activeSection} preferences below.</p>

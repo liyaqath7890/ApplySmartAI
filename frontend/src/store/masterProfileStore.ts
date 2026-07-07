@@ -95,9 +95,9 @@ interface MasterProfileState {
 
   // Skills
   setSkills: (skills: Skill[]) => Promise<void>;
-  addSkill: (item: Skill) => void;
-  updateSkill: (id: string, item: Partial<Skill>) => void;
-  deleteSkill: (id: string) => void;
+  addSkill: (item: Skill) => Promise<void>;
+  updateSkill: (id: string, item: Partial<Skill>) => Promise<void>;
+  deleteSkill: (id: string) => Promise<void>;
 
   // Resumes
   setResumes: (resumes: any[]) => void;
@@ -390,7 +390,7 @@ export const useMasterProfileStore = create<MasterProfileState>()((set, get) => 
       setSkills: async (skills) => {
         set({ skills });
         try {
-          await careerProfileService.updateSkills(
+          const res = await careerProfileService.updateSkills(
             skills.map((s) => ({
               name: s.name,
               category: s.category,
@@ -399,19 +399,38 @@ export const useMasterProfileStore = create<MasterProfileState>()((set, get) => 
               isTechnical: true,
             })) as any
           );
+          if (res.skills) {
+            set({
+              skills: res.skills.map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                category: s.category,
+                proficiency: (s.proficiencyLevel?.toLowerCase() ?? 'intermediate') as Skill['proficiency'],
+                yearsOfExperience: s.yearsOfExperience ?? 0,
+              }))
+            });
+          }
+          toast.success('Skills updated');
         } catch {
-          // non-blocking — local state already updated
+          toast.error('Failed to update skills');
+          await get().fetchProfile();
         }
       },
 
-      addSkill: (item) =>
-        set((s) => ({ skills: [...s.skills, item] })),
+      addSkill: async (item) => {
+        const updated = [...get().skills, item];
+        await get().setSkills(updated);
+      },
 
-      updateSkill: (id, item) =>
-        set((s) => ({ skills: s.skills.map((sk) => sk.id === id ? { ...sk, ...item } : sk) })),
+      updateSkill: async (id, item) => {
+        const updated = get().skills.map((sk) => sk.id === id ? { ...sk, ...item } : sk);
+        await get().setSkills(updated);
+      },
 
-      deleteSkill: (id) =>
-        set((s) => ({ skills: s.skills.filter((sk) => sk.id !== id) })),
+      deleteSkill: async (id) => {
+        const updated = get().skills.filter((sk) => sk.id !== id);
+        await get().setSkills(updated);
+      },
 
       // ── Resumes ────────────────────────────────────────────────────────────
       setResumes: (resumes) => set({ resumes }),

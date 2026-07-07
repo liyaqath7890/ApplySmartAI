@@ -171,5 +171,10 @@ export const careerProfileService = {
   deleteEducation: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await axios.delete(`/career-profile/education/${id}`);
     return response.data;
+  },
+
+  autofillProfile: async (text: string): Promise<{ success: boolean; message: string }> => {
+    const response = await axios.post('/career-profile/autofill', { text });
+    return response.data;
   }
 };

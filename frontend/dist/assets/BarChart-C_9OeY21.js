@@ -1,0 +1,2 @@
+import{F as a,B as i,X as s,Y as t,I as e}from"./AreaChart-CWjYO8eH.js";var x=a({chartName:"BarChart",GraphicalChild:i,defaultTooltipEventType:"axis",validateTooltipEventTypes:["axis","item"],axisComponents:[{axisType:"xAxis",AxisComp:s},{axisType:"yAxis",AxisComp:t}],formatAxisMap:e});export{x as B};
+//# sourceMappingURL=BarChart-C_9OeY21.js.map

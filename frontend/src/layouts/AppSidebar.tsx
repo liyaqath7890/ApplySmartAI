@@ -22,6 +22,7 @@ import {
   Share2,
   CreditCard,
   Zap,
+  Activity,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -79,6 +80,7 @@ const navSections: NavSection[] = [
   {
     title: 'Learning',
     items: [
+      { name: 'Learning Hub', href: '/app/learning', icon: GraduationCap },
       { name: 'Learning Path', href: '/app/learning-path', icon: BookOpen },
       { name: 'Skill Gap Analysis', href: '/app/skill-gap', icon: GraduationCap },
     ],
@@ -87,6 +89,7 @@ const navSections: NavSection[] = [
     title: 'Analytics',
     items: [
       { name: 'Analytics', href: '/app/analytics', icon: BarChart3 },
+      { name: 'System Health', href: '/app/monitoring', icon: Activity },
     ],
   },
 ];

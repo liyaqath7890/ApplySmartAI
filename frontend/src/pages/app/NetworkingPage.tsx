@@ -8,6 +8,7 @@ export default function NetworkingPage() {
   const { contacts, searchQuery, setSearchQuery, fetchContacts, addContact, updateContact, deleteContact, isLoading } = useNetworkingStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<NetworkingContact | null>(null);
+  const [classification, setClassification] = useState('');
   const [formData, setFormData] = useState<Partial<NetworkingContact>>({
     name: '', title: '', company: '', linkedinUrl: '', githubUrl: '', twitterUrl: '', websiteUrl: '', notes: '',
     status: 'connection_request_sent', priority: 'medium', followUpDate: ''
@@ -19,6 +20,7 @@ export default function NetworkingPage() {
 
   const handleOpenAdd = () => {
     setSelectedContact(null);
+    setClassification('');
     setFormData({
       name: '', title: '', company: '', linkedinUrl: '', githubUrl: '', twitterUrl: '', websiteUrl: '', notes: '',
       status: 'connection_request_sent', priority: 'medium', followUpDate: ''
@@ -28,7 +30,12 @@ export default function NetworkingPage() {
 
   const handleOpenEdit = (contact: NetworkingContact) => {
     setSelectedContact(contact);
-    setFormData({ ...contact });
+    const matched = contact.title?.match(/^\[(.*?)\]/);
+    const parsedClass = matched ? matched[1] : '';
+    const cleanTitle = contact.title?.replace(/^\[.*?\]\s*/, '') || '';
+    
+    setClassification(parsedClass);
+    setFormData({ ...contact, title: cleanTitle });
     setIsModalOpen(true);
   };
 
@@ -38,12 +45,16 @@ export default function NetworkingPage() {
       toast.error('Name is required');
       return;
     }
+    
+    const finalTitle = classification ? `[${classification}] ${formData.title || ''}`.trim() : formData.title || '';
+    const payload = { ...formData, title: finalTitle };
+
     try {
       if (selectedContact) {
-        await updateContact(selectedContact.id, formData);
+        await updateContact(selectedContact.id, payload);
         toast.success('Contact updated');
       } else {
-        await addContact(formData);
+        await addContact(payload);
         toast.success('Contact added');
       }
       setIsModalOpen(false);
@@ -84,8 +95,8 @@ export default function NetworkingPage() {
   };
 
   return (
-    <div className="space-y-6 p-6 bg-app-bg text-app-primary min-h-screen">
-      <PageHeader title="Networking Workspace" subtitle="Track connection logs, referral requests, and outreach goals." icon={Share2}>
+    <div className="space-y-6 p-6 bg-app-bg text-app-primary min-h-screen animate-fade-in">
+      <PageHeader title="Networking CRM" subtitle="Manage Stanford alumni, tech mentors, hiring managers, and active referrals." icon={Share2}>
         <div className="flex gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-secondary" />
@@ -101,7 +112,6 @@ export default function NetworkingPage() {
         </div>
       </PageHeader>
 
-      {/* Stats summary banner */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-5 bg-gradient-to-br from-indigo-950/10 to-blue-950/10 border border-blue-500/10">
           <h4 className="text-xs font-semibold text-app-secondary uppercase tracking-wider">Total Connections</h4>
@@ -134,8 +144,28 @@ export default function NetworkingPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-200">{contact.name}</h3>
-                  <p className="text-sm text-blue-400">{contact.title || 'No Title'}</p>
-                  <p className="text-xs text-app-secondary">{contact.company || 'No Company'}</p>
+                  {(() => {
+                    const matched = contact.title?.match(/^\[(.*?)\]/);
+                    const parsedClass = matched ? matched[1] : '';
+                    const cleanTitle = contact.title?.replace(/^\[.*?\]\s*/, '') || contact.title || 'No Title';
+                    
+                    return (
+                      <div className="space-y-1 mt-1">
+                        {parsedClass && (
+                          <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            parsedClass === 'Hiring Manager' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                            parsedClass === 'Alumni' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            parsedClass === 'Mentor' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                          }`}>
+                            {parsedClass}
+                          </span>
+                        )}
+                        <p className="text-sm text-slate-350">{cleanTitle}</p>
+                      </div>
+                    );
+                  })()}
+                  <p className="text-xs text-app-secondary mt-1">{contact.company || 'No Company'}</p>
                 </div>
                 <Badge variant={statusVariant(contact.status)}>{contact.status.replace(/_/g, ' ')}</Badge>
               </div>
@@ -163,19 +193,19 @@ export default function NetworkingPage() {
               </div>
 
               <div className="border-t border-app-border pt-4 flex justify-between items-center">
-                <span className="text-[11px] text-app-secondary flex items-center gap-1">
+                <span className="text-[10px] text-app-secondary flex items-center gap-1">
                   {contact.followUpDate ? (
                     <>
                       <Calendar className="h-3.5 w-3.5 text-blue-400" />
                       Follow up: {new Date(contact.followUpDate).toLocaleDateString()}
                     </>
                   ) : (
-                    'No follow up set'
+                    'No follow up'
                   )}
                 </span>
                 <div className="flex gap-1.5">
-                  <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(contact)}><Edit2 className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" className="hover:text-red-500" onClick={() => handleDelete(contact.id)}><Trash2 className="h-3 w-3" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(contact)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="ghost" className="hover:text-red-500" onClick={() => handleDelete(contact.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
             </div>
@@ -188,7 +218,7 @@ export default function NetworkingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
           <div className="relative w-full max-w-lg bg-app-card border border-app-border rounded-xl shadow-2xl overflow-hidden p-6 animate-slide-up">
-            <h3 className="text-lg font-bold text-slate-200 mb-4">{selectedContact ? 'Edit Contact' : 'Add Connection'}</h3>
+            <h3 className="text-lg font-bold text-slate-200 mb-4">{selectedContact ? 'Edit Connection' : 'Add Connection'}</h3>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -200,6 +230,21 @@ export default function NetworkingPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-app-border rounded-lg text-sm bg-app-bg text-app-primary focus:outline-none focus:border-blue-500/50"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-app-secondary mb-1">Classification</label>
+                  <select
+                    value={classification}
+                    onChange={(e) => setClassification(e.target.value)}
+                    className="w-full px-3 py-2 border border-app-border rounded-lg text-sm bg-app-bg text-app-primary focus:outline-none"
+                  >
+                    <option value="">-- None --</option>
+                    <option value="Hiring Manager">Hiring Manager</option>
+                    <option value="Alumni">Alumni</option>
+                    <option value="Mentor">Mentor</option>
+                    <option value="Employee">Employee</option>
+                    <option value="Referral Source">Referral Source</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-app-secondary mb-1">Job Title</label>

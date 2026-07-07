@@ -46,6 +46,8 @@ const CoachPage = lazy(() => import('@/pages/app/CoachPage'));
 const NetworkingPage = lazy(() => import('@/pages/app/NetworkingPage'));
 const CalendarPage = lazy(() => import('@/pages/app/CalendarPage'));
 const BrowserProductivityPage = lazy(() => import('@/pages/app/BrowserProductivityPage'));
+const LearningPage = lazy(() => import('@/pages/app/LearningPage'));
+const AdminMonitoringPage = lazy(() => import('@/pages/app/AdminMonitoringPage'));
 
 export interface AppRoute {
   path: string;
@@ -80,4 +82,6 @@ export const appRoutes: AppRoute[] = [
   { path: 'networking', element: <NetworkingPage />, title: 'Networking Workspace', icon: Share2 },
   { path: 'calendar', element: <CalendarPage />, title: 'Smart Calendar', icon: Calendar },
   { path: 'productivity', element: <BrowserProductivityPage />, title: 'Browser Productivity', icon: Zap },
+  { path: 'learning', element: <LearningPage />, title: 'Learning Hub', icon: GraduationCap },
+  { path: 'monitoring', element: <AdminMonitoringPage />, title: 'System Health', icon: Activity },
 ];
