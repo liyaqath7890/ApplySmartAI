@@ -5,6 +5,7 @@ import RejectionAnalysisAgent from '../services/agents/RejectionAnalysisAgent.js
 import OpportunityRadarAgent from '../services/agents/OpportunityRadarAgent.js';
 import InterviewPrepAgent from '../services/agents/InterviewPrepAgent.js';
 import LearningPathAgentV2 from '../services/agents/LearningPathAgentV2.js';
+import { generateAIResponse } from '../services/openAiService.js';
 import {
   CareerTwin,
   Recruiter,
@@ -18,7 +19,8 @@ import {
   WorkExperience,
   Education,
   Application,
-  Interview
+  Interview,
+  Skill
 } from '../routes/models/index.js';
 
 const orchestrator = new AgentOrchestrator();
@@ -162,7 +164,7 @@ export const createRecruiterInteraction = async (req, res) => {
 
 export const generateOutreachMessage = async (req, res) => {
   try {
-    const { recruiterId, role } = req.body;
+    const { recruiterId, role, channel = 'email' } = req.body;
     const candidate = await User.findByPk(req.user.id, { include: ['candidateProfile', 'skills'] });
     const recruiter = recruiterId ? await Recruiter.findByPk(recruiterId) : null;
 
@@ -174,15 +176,16 @@ export const generateOutreachMessage = async (req, res) => {
       try {
         const openai = new OpenAI({ apiKey: config.openai.apiKey });
         const systemPrompt = `You are an expert career coach writing a personalized recruiter outreach message.
-        Write a concise, professional, and compelling message. Return JSON: {"subject": "string", "content": "string"}`;
+        Write a concise, professional, and compelling outreach template. The channel format is: ${channel}.
+        If channel is 'linkedin', make it extremely punchy (under 300 characters, no subject header, conversational).
+        Return JSON format: {"subject": "string", "content": "string"}`;
 
         const userPrompt = `Candidate: ${candidate.firstName} ${candidate.lastName}
         Headline: ${candidate.candidateProfile?.headline || 'Software Engineer'}
         Skills: ${candidate.skills?.map(s => s.name).join(', ')}
         Recruiter: ${recruiter?.name || 'Hiring Manager'} at ${recruiter?.company || 'the company'}
         Role: ${role || 'Software Engineer'}
-
-        Write a personalized outreach message.`;
+        Write a personalized outreach template.`;
 
         const response = await openai.chat.completions.create({
           model: config.openai.model,
@@ -203,11 +206,19 @@ export const generateOutreachMessage = async (req, res) => {
       const candidateName = `${candidate.firstName} ${candidate.lastName}`;
       const candidateTitle = candidate.candidateProfile?.headline || 'Software Engineer';
       const targetRole = role || 'Software Engineer';
-      
-      message = {
-        subject: `Interest in ${targetRole} opportunities at ${companyName} - ${candidateName}`,
-        content: `Hi ${recruiterName},\n\nI hope you're having a great week.\n\nI recently came across the ${targetRole} position at ${companyName} and was immediately drawn to it. As a ${candidateTitle} specializing in ${candidate.skills?.slice(0, 3).map(s => s.name).join(', ') || 'modern software engineering'}, I've spent the past few years building high-performing, scalable applications.\n\nI'd love to connect and share more about how my experience matches what you are looking for at ${companyName}. I have attached my resume for your review.\n\nThanks so much for your time and consideration.\n\nBest regards,\n\n${candidateName}\n${candidate.email}`
-      };
+      const techSkills = candidate.skills?.slice(0, 3).map(s => s.name).join(', ') || 'modern software engineering';
+
+      if (channel === 'linkedin') {
+        message = {
+          subject: 'LinkedIn Connection Request',
+          content: `Hi ${recruiterName}, saw you're hiring for ${targetRole} positions at ${companyName}. As a ${candidateTitle} skilled in ${techSkills}, I'd love to connect and share how my background aligns. Best, ${candidateName}.`
+        };
+      } else {
+        message = {
+          subject: `Interest in ${targetRole} opportunities at ${companyName} - ${candidateName}`,
+          content: `Hi ${recruiterName},\n\nI hope you're having a great week.\n\nI recently came across the ${targetRole} position at ${companyName} and was immediately drawn to it. As a ${candidateTitle} specializing in ${techSkills}, I've spent the past few years building high-performing, scalable applications.\n\nI'd love to connect and share more about how my experience matches what you are looking for at ${companyName}. I have attached my resume for your review.\n\nThanks so much for your time and consideration.\n\nBest regards,\n\n${candidateName}\n${candidate.email}`
+        };
+      }
     }
 
     res.json({ success: true, message });
@@ -663,13 +674,61 @@ export const getAnalytics = async (req, res) => {
 // AI Career Copilot (Module 13)
 export const careerCopilotChat = async (req, res) => {
   try {
-    const responses = [
-      "Based on your application history, I recommend focusing on TypeScript and cloud skills.",
-      "Let's analyze why you might not be getting interviews...",
-      "Here are 3 jobs that are a great match for your skills!"
-    ];
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    res.json({ success: true, message: randomResponse });
+    const { message, path = '' } = req.body;
+    const candidateId = req.user.id;
+
+    // Fetch candidate details with profile and skills
+    const candidate = await User.findByPk(candidateId, {
+      include: [
+        { model: CandidateProfile, as: 'candidateProfile' },
+        { model: Skill, as: 'skills' }
+      ]
+    });
+
+    if (!candidate) {
+      return res.status(404).json({ success: false, error: 'Candidate not found' });
+    }
+
+    const skillsList = candidate.skills?.map(s => s.name) || [];
+    const headline = candidate.candidateProfile?.headline || 'Professional Job Seeker';
+    const atsScore = candidate.candidateProfile?.atsScore || 70;
+
+    const OpenAI = (await import('openai')).default;
+    const config = (await import('../config/index.js')).default;
+    const hasRealAI = config.openai.apiKey && config.openai.apiKey !== 'dummy-key' && config.openai.apiKey !== 'dummy-key-for-development';
+
+    if (hasRealAI) {
+      const systemPrompt = `You are a helpful, expert AI Career Copilot inside a Career Operating System.
+      Candidate Details:
+      - Name: ${candidate.firstName} ${candidate.lastName}
+      - Headline: ${headline}
+      - ATS Match Score: ${atsScore}%
+      - Current Skills: ${skillsList.join(', ')}
+      - Current App Workspace Section: ${path}
+
+      Provide helpful, highly specific, and contextual career advice based on the user's message and workspace section. Use clean markdown formatting.`;
+
+      const aiMsg = await generateAIResponse(systemPrompt, message);
+      return res.json({ success: true, message: aiMsg });
+    }
+
+    // Dynamic Heuristics engine fallback
+    let contextResponse = `Hi ${candidate.firstName}! As your Career Copilot, I'm tracking your profile as a **${headline}**. `;
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('resume') || path.includes('resume')) {
+      contextResponse += `To optimize your resume (currently at ${atsScore}% ATS compatibility), consider detailing projects featuring your top skills: **${skillsList.slice(0, 3).join(', ') || 'React/Node'}**.`;
+    } else if (lowerMessage.includes('interview') || path.includes('interview') || path.includes('prep')) {
+      contextResponse += `I recommend practicing STAR structures for technical behaviors. Focus on explaining the Situation, Task, Action, and specific metrics (Results) to stand out to recruiters.`;
+    } else if (lowerMessage.includes('learn') || path.includes('learning')) {
+      contextResponse += `Checking your skill gaps: we should target **System Design and Cloud Services** next. Try completing a practice module in your Learning tab.`;
+    } else if (lowerMessage.includes('recruit') || path.includes('recruiter') || path.includes('crm')) {
+      contextResponse += `You have logged outreach priorities. Remember to follow up with engaged contacts within 3 days. Use the template templates to generate cold intro formats.`;
+    } else {
+      contextResponse += `I've analyzed your profile and active pipelines. Focus on submitting at least 2 applications today, tracking recruiter followups, and keeping your skills checklists updated!`;
+    }
+
+    res.json({ success: true, message: contextResponse });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

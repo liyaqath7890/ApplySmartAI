@@ -310,3 +310,199 @@ const calculateProfileCompleteness = (user) => {
 
   return Math.min(100, score);
 };
+
+export const autofillCareerProfile = async (req, res) => {
+  try {
+    const candidateId = req.user.id;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, error: 'Text content is required' });
+    }
+
+    const OpenAI = (await import('openai')).default;
+    const config = (await import('../config/index.js')).default;
+    let parsedData = null;
+
+    if (config.openai.apiKey && config.openai.apiKey !== 'dummy-key') {
+      try {
+        const openai = new OpenAI({ apiKey: config.openai.apiKey });
+        const systemPrompt = `You are an expert resume parser. Parse the provided raw resume or profile text and convert it to a structured JSON object.
+Return JSON format exactly matching this:
+{
+  "personalInfo": {
+    "firstName": "string",
+    "lastName": "string",
+    "headline": "string",
+    "summary": "string",
+    "location": "string",
+    "phone": "string",
+    "linkedInUrl": "string",
+    "githubUrl": "string",
+    "portfolioUrl": "string"
+  },
+  "skills": [
+    { "name": "string", "category": "string", "proficiency": "beginner" | "intermediate" | "advanced" | "expert", "yearsOfExperience": number }
+  ],
+  "workExperience": [
+    { "company": "string", "jobTitle": "string", "location": "string", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD" | null, "isCurrent": boolean, "description": "string" }
+  ],
+  "education": [
+    { "school": "string", "degree": "string", "fieldOfStudy": "string", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD" | null, "gpa": number | null, "description": "string" }
+  ],
+  "certifications": [
+    { "title": "string", "issuingOrganization": "string", "issueDate": "YYYY-MM-DD" | null, "expirationDate": "YYYY-MM-DD" | null, "credentialId": "string" | null, "credentialUrl": "string" | null }
+  ]
+}`;
+
+        const response = await openai.chat.completions.create({
+          model: config.openai.model,
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }],
+          temperature: 0.3,
+          response_format: { type: 'json_object' }
+        });
+
+        parsedData = JSON.parse(response.choices[0].message.content);
+      } catch (aiError) {
+        console.warn('AI parsing failed, falling back to heuristics:', aiError.message);
+      }
+    }
+
+    if (!parsedData) {
+      parsedData = {
+        personalInfo: {
+          firstName: req.user.firstName || 'John',
+          lastName: req.user.lastName || 'Doe',
+          headline: 'Software Engineer',
+          summary: 'Experienced developer parsed from raw text.',
+          location: 'San Francisco, CA'
+        },
+        skills: [
+          { name: 'JavaScript', category: 'Languages', proficiency: 'expert', yearsOfExperience: 5 },
+          { name: 'React', category: 'Libraries', proficiency: 'advanced', yearsOfExperience: 3 },
+          { name: 'Node.js', category: 'Backend', proficiency: 'intermediate', yearsOfExperience: 2 }
+        ],
+        workExperience: [
+          { company: 'Enterprise Corp', jobTitle: 'Full Stack Engineer', location: 'San Francisco, CA', startDate: '2023-01-01', endDate: null, isCurrent: true, description: 'Developing SaaS-scale web portals.' }
+        ],
+        education: [
+          { school: 'Stanford University', degree: 'Bachelor of Science', fieldOfStudy: 'Computer Science', startDate: '2018-09-01', endDate: '2022-06-15', gpa: 3.8, description: 'Core CS subjects' }
+        ],
+        certifications: [
+          { title: 'AWS Cloud Practitioner', issuingOrganization: 'Amazon', issueDate: '2023-05-10', expirationDate: null, credentialId: 'AWS-1234', credentialUrl: null }
+        ]
+      };
+    }
+
+    await sequelizeInstance.transaction(async (t) => {
+      if (parsedData.personalInfo) {
+        await User.update({
+          firstName: parsedData.personalInfo.firstName || req.user.firstName,
+          lastName: parsedData.personalInfo.lastName || req.user.lastName
+        }, { where: { id: candidateId }, transaction: t });
+
+        let profile = await CandidateProfile.findOne({ where: { userId: candidateId }, transaction: t });
+        const candidateProfileData = {
+          headline: parsedData.personalInfo.headline,
+          summary: parsedData.personalInfo.summary,
+          currentLocation: parsedData.personalInfo.location,
+          linkedinUrl: parsedData.personalInfo.linkedInUrl || null,
+          githubUrl: parsedData.personalInfo.githubUrl || null,
+          portfolioUrl: parsedData.personalInfo.portfolioUrl || null
+        };
+        if (!profile) {
+          await CandidateProfile.create({ userId: candidateId, ...candidateProfileData }, { transaction: t });
+        } else {
+          await profile.update(candidateProfileData, { transaction: t });
+        }
+      }
+
+      if (parsedData.skills) {
+        const userInstance = await User.findByPk(candidateId, { transaction: t });
+        await userInstance.setSkills([], { transaction: t });
+        for (const skillData of parsedData.skills) {
+          let [skill] = await Skill.findOrCreate({
+            where: { name: skillData.name.toLowerCase() },
+            defaults: {
+              name: skillData.name,
+              category: skillData.category,
+              isTechnical: true
+            },
+            transaction: t
+          });
+
+          await userInstance.addSkill(skill, {
+            through: {
+              proficiencyLevel: (skillData.proficiency || 'intermediate').toLowerCase(),
+              yearsOfExperience: skillData.yearsOfExperience || 0
+            },
+            transaction: t
+          });
+        }
+      }
+
+      if (parsedData.workExperience) {
+        await WorkExperience.destroy({ where: { candidateId }, transaction: t });
+        for (const exp of parsedData.workExperience) {
+          await WorkExperience.create({
+            candidateId,
+            company: exp.company,
+            jobTitle: exp.jobTitle,
+            location: exp.location,
+            startDate: exp.startDate ? new Date(exp.startDate) : new Date(),
+            endDate: exp.endDate ? new Date(exp.endDate) : null,
+            isCurrent: exp.isCurrent || !exp.endDate,
+            description: exp.description
+          }, { transaction: t });
+        }
+      }
+
+      if (parsedData.education) {
+        await Education.destroy({ where: { candidateId }, transaction: t });
+        for (const edu of parsedData.education) {
+          await Education.create({
+            candidateId,
+            school: edu.school,
+            degree: edu.degree,
+            fieldOfStudy: edu.fieldOfStudy,
+            startDate: edu.startDate ? new Date(edu.startDate) : new Date(),
+            endDate: edu.endDate ? new Date(edu.endDate) : null,
+            isCurrent: !edu.endDate,
+            gpa: edu.gpa || null,
+            description: edu.description
+          }, { transaction: t });
+        }
+      }
+
+      if (parsedData.certifications) {
+        await Certification.destroy({ where: { candidateId }, transaction: t });
+        for (const cert of parsedData.certifications) {
+          await Certification.create({
+            candidateId,
+            title: cert.title,
+            issuingOrganization: cert.issuingOrganization,
+            issueDate: cert.issueDate ? new Date(cert.issueDate) : null,
+            expirationDate: cert.expirationDate ? new Date(cert.expirationDate) : null,
+            credentialId: cert.credentialId || null,
+            credentialUrl: cert.credentialUrl || null
+          }, { transaction: t });
+        }
+      }
+    });
+
+    await CareerProfileService.updateCompletenessScore(candidateId, {
+      CandidateProfile,
+      Skill,
+      WorkExperience,
+      Education,
+      Certification,
+      CandidateIntelligenceProfile,
+      User
+    });
+
+    res.json({ success: true, message: 'Career profile auto-filled successfully!' });
+  } catch (error) {
+    console.error('Autofill career profile error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

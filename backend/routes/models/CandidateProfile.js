@@ -87,6 +87,9 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
 
   linkedinUrl: {
     type: DataTypes.STRING,
+    set(value) {
+      this.setDataValue('linkedinUrl', value === '' ? null : value);
+    },
     validate: {
       isUrl: true
     }
@@ -94,6 +97,9 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
 
   githubUrl: {
     type: DataTypes.STRING,
+    set(value) {
+      this.setDataValue('githubUrl', value === '' ? null : value);
+    },
     validate: {
       isUrl: true
     }
@@ -101,6 +107,9 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
 
   portfolioUrl: {
     type: DataTypes.STRING,
+    set(value) {
+      this.setDataValue('portfolioUrl', value === '' ? null : value);
+    },
     validate: {
       isUrl: true
     }
@@ -108,6 +117,9 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
 
   websiteUrl: {
     type: DataTypes.STRING,
+    set(value) {
+      this.setDataValue('websiteUrl', value === '' ? null : value);
+    },
     validate: {
       isUrl: true
     }

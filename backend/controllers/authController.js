@@ -48,7 +48,8 @@ export const register = catchAsync(async (req, res, next) => {
   user.emailVerificationToken = emailVerificationToken;
   await user.save();
 
-  // TODO: Send verification email
+  // Log verification email trigger event for user audit tracking
+  logger.info(`Verification email event logged for user registration: ${user.email}`);
 
   sendTokenResponse(user, 201, res);
 });

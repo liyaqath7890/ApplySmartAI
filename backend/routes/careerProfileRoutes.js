@@ -11,7 +11,8 @@ import {
   deleteWorkExperience,
   createEducation,
   updateEducation,
-  deleteEducation
+  deleteEducation,
+  autofillCareerProfile
 } from '../controllers/careerProfileController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -23,6 +24,7 @@ router.use(protect);
 // Career Profile
 router.get('/', getCareerProfile);
 router.put('/', updateCandidateProfile);
+router.post('/autofill', autofillCareerProfile);
 
 // Skills
 router.put('/skills', updateSkills);

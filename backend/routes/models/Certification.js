@@ -40,6 +40,9 @@ const Certification = sequelize.define('Certification', {
   credentialUrl: {
     type: DataTypes.STRING,
     allowNull: true,
+    set(value) {
+      this.setDataValue('credentialUrl', value === '' ? null : value);
+    },
     validate: {
       isUrl: true
     }
